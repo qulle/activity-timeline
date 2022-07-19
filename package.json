@@ -1,0 +1,18 @@
+{
+    "name": "activity-timeline",
+    "version": "1.0.0",
+    "description": "Portable activity timeline that draws the timeline based on data given in JSON format.",
+    "scripts": {
+        "start": "parcel src/index.html --open",
+        "build": "parcel build --public-url . src/index.html",
+        "clean": "rm -rf dist/",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "Qulle - https://github.com/qulle",
+    "license": "BSD-2-Clause license",
+    "devDependencies": {
+        "@parcel/transformer-sass": "^2.6.0",
+        "parcel": "^2.6.0"
+    }
+}
