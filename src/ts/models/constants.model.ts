@@ -1,4 +1,6 @@
-export interface TimelineConstants {
+export interface Constants {
+    ladingPageWidth: number,
+    ladingPageHeight: number,
     radius: number,
     amplification: number,
     stepDistanceXAxis: number,

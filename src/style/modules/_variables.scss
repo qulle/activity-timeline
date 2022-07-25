@@ -1,0 +1,35 @@
+// Colors
+$background: #FFFFFF;
+$color-blue-light: #c9e2f3;
+$color-blue-mid: #6397C2;
+$color-blue-dark: #0166A5;
+$color-gray-light: #F6F6F6;
+$color-gray-mid: #959DAD;
+$color-gray-dark: #3B4352;
+$color-light: #FFFFFF;
+$color-dark: $color-gray-dark;
+
+// Shadows
+$shadow-focus-width: 3px;
+
+$box-shadow-light: 1px 1px 0 rgba(0, 0, 0, .1);
+$box-shadow-mid: 1px 1px 0 rgba(0, 0, 0, .2);
+$box-shadow-dark: 1px 1px 0 rgba(0, 0, 0, .3);
+
+$drop-shadow-filter-light: drop-shadow(1px 1px 0 rgba(0, 0, 0, .1));
+$drop-shadow-filter-mid: drop-shadow(1px 1px 0 rgba(0, 0, 0, .2));
+$drop-shadow-filter-heavy: drop-shadow(1px 1px 0 rgba(0, 0, 0, .3));
+
+$text-shadow-light: 1px 1px 0 rgba(0, 0, 0, .1);
+$text-shadow-mid: 1px 1px 0 rgba(0, 0, 0, .2);
+$text-shadow-dark: 1px 1px 0 rgba(0, 0, 0, .3);
+
+// Misc
+$border-radius: 4px;
+
+// Breakpoints
+$breakpoint-xxl: 1400px;
+$breakpoint-xl: 1200px;
+$breakpoint-lg: 992px;
+$breakpoint-md: 768px;
+$breakpoint-sm: 576px;

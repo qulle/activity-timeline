@@ -1,14 +1,14 @@
-import { TimelineStyle } from "../models/timeline-style.model";
+import { Style } from "../models/style.model";
 
 /**
+ * Default object containing style information
  * This data can be overridden from the JSON-file
- * Adding the style-node
  * "style": {
  *     "backgroundColor": "#3B4352"
  * },
  * "days": [...]
  */
-const TimelineStyle: TimelineStyle = {
+const DefaultStyle: Style = {
     fontSize: 14,
     lineThickness: 2,
     timelineStrokeColor: '#3B4352',
@@ -18,4 +18,4 @@ const TimelineStyle: TimelineStyle = {
     backgroundColor: '#FFFFFF'
 };
 
-export { TimelineStyle };
+export { DefaultStyle };

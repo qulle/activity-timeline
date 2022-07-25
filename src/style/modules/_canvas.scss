@@ -1,0 +1,8 @@
+.at-canvas {
+    display: block;
+
+    &--highlight {
+        transition: background-color 100ms ease-in-out;
+        background-color: $color-blue-light;
+    }
+}

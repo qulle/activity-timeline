@@ -1,10 +1,10 @@
 # Activity Timeline
-Portable activity timeline that draws the timeline based on data given in JSON format. 
+Portable activity Timeline that draws a Timeline based on data given in JSON format. By clicking on any activity a detailed modal window is displayed showing additional information about the activity.
 
 ## Latest build - [Demo](https://qulle.github.io/activity-timeline/)
 
 ## Screenshots
-A picture says more than a thousand words, but the demo above says it all.
+The application is not limited to a light and dark theme. Any colors can be used to create custom themes.
 
 ### Light
 ![Screenshot Light Theme](images/demo-light.png?raw=true "Screenshot Light Theme")
@@ -12,13 +12,57 @@ A picture says more than a thousand words, but the demo above says it all.
 ### Dark
 ![Screenshot Dark Theme](images/demo-dark.png?raw=true "Screenshot Dark Theme")
 
-### Landing Page
-![Screenshot Landing Page](images/landing-page.png?raw=true "Screenshot Landing Page")
-
 ## Usage
-The application is portable, launch the HTML file in the browser and drop a JSON file in the application. The application renders a timeline of all activities and provides an easy-to-understand sequence of events.
+The application is portable, launch the HTML file in the browser and drop a JSON file in the application. The application renders a Timeline of all activities and provides an easy-to-understand sequence of events.
 
-You control the theme through parameters in the JSON file style-node. If no style-node is present the application falls back to the default (light) version.
+### Shortcut keys
+- `s` pans to the start of the Timeline
+- `e` pans to the end of the Timeline
+- `z` resets the zoom level and pans to the end of the Timeline
+- `ctrl + wheel` zooms the Timeline 
+
+### Data
+The data is given in an array of days. The description is displayed in a modal window when an activity is clicked in the Timeline. The days and activities are sorted in the application to always be shown in the correct order according to the date and timestamp.
+```json
+{
+    "days": [
+        {
+            "date": "2022-07-08",
+            "activities": [
+                {
+                    "title": "Patched webserver",
+                    "description": "Some additional information about the activity",
+                    "timestamp": "12:23",
+                    "fillColor": "#D0CEE2",
+                    "strokeColor": "#56517E"
+                },
+                {
+                    "title": "Restarted application pool",
+                    "description": "Some additional information about the activity",
+                    "timestamp": "18:36",
+                    "fillColor": "#FAD7AC",
+                    "strokeColor": "#C27B25"
+                }
+            ]
+        },
+        {
+            "date": "2022-07-10",
+            "activities": [
+                {
+                    "title": "Restarted application pool",
+                    "description": "Some additional information about the activity",
+                    "timestamp": "18:36",
+                    "fillColor": "#FAD7AC",
+                    "strokeColor": "#C27B25"
+                }
+            ]
+        }
+    ]
+}
+```
+
+### Theme
+The theme can be controlled through parameters in the JSON file style-node. If no style-node is present the application falls back to the default version using `light` theme.
 ```json
 {
     "style": {
@@ -32,39 +76,15 @@ You control the theme through parameters in the JSON file style-node. If no styl
 }
 ```
 
-The data is given in an array of days.
+### Meta information
+The local timezone can be controlled through parameters in the JSON file meta-node. If no meta-node is present the application falls back to the default version using `en-us`.
 ```json
 {
-    "days": [
-        {
-            "date": "2022-07-08",
-            "activities": [
-                {
-                    "title": "Patched webserver",
-                    "timestamp": "12:23",
-                    "fillColor": "#D0CEE2",
-                    "strokeColor": "#56517E"
-                },
-                {
-                    "title": "Restarted application pool",
-                    "timestamp": "18:36",
-                    "fillColor": "#FAD7AC",
-                    "strokeColor": "#C27B25"
-                }
-            ]
-        },
-        {
-            "date": "2022-07-10",
-            "activities": [
-                {
-                    "title": "Restarted application pool",
-                    "timestamp": "18:36",
-                    "fillColor": "#FAD7AC",
-                    "strokeColor": "#C27B25"
-                }
-            ]
-        }
-    ]
+    "meta": {
+        "locale": "sv-se"
+    },
+    "style": {},
+    "days": []
 }
 ```
 

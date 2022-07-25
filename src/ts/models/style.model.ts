@@ -1,4 +1,4 @@
-export interface TimelineStyle {
+export interface Style {
     fontSize: number,
     lineThickness: number,
     timelineStrokeColor: string,

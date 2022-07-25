@@ -1,49 +1,432 @@
 import { Day } from '../models/day.model';
-import { CTorOptions } from '../models/ctor-options.model';
-import { TimelineConstants } from '../defaults/timeline-constants.default';
-import { TimelineStyle as DefaultTimelineStyle } from '../defaults/timeline-style.default';
-import { TimelineStyle } from '../models/timeline-style.model';
+import { Data } from '../models/data.model';
+import { Zoom } from '../models/zoom.model';
+import { Style } from '../models/style.model';
+import { Position } from '../models/position.model';
+import { DefaultData } from '../defaults/data.default';
+import { DefaultZoom } from '../defaults/zoom.default';
+import { DefaultPosition } from '../defaults/position.default';
+import { DefaultConstants } from '../defaults/constants.default';
+import { Activity } from '../models/activity.model';
+import { Meta } from '../models/meta.model';
+import ContextMenu from './contextmenu/Contextmenu';
+import Modal from './modal/Modal';
+import Alert from './dialog/Alert';
+
+// Get version information from package.json
+const VERSION = require('/package.json').version;
+
+// Reference to target element used when panning the canvas
+const SCROLLABLE_TARGET = document.documentElement;
 
 /**
- * Class to draw timeline with activities on a HTMLCanvasElement
+ * Class to render Timeline on a HTMLCanvasElement
  */
 class Timeline {
-    // CTor parameters
+    // Internal Timeline properties
     private canvas: HTMLCanvasElement;
-    private locale: string;
-
-    // Internal timeline data
+    private contextmenu: ContextMenu;
+    private meta: Meta;
+    private style: Style;
     private days: Day[];
-    private timelineStyle: TimelineStyle;
+    private zoom: Zoom;
+    private isDragging: boolean;
+    private dragPosition: Position;
+    private zoomPosition: Position;
+    private filename: string;
 
-    constructor(options: CTorOptions) {
-        this.canvas = options.canvas;
-        this.locale = options.locale;
+    // Intermittent event listeners
+    private mouseDragCallback: any;
+    private mouseUpCallback: any;
 
-        // Set default style, can be overridden from the JSON-files
-        this.timelineStyle = DefaultTimelineStyle
+    constructor(canvas: HTMLCanvasElement) {
+        this.canvas = canvas;
+        this.isDragging = false;
+        this.zoom = DefaultZoom;
+        this.dragPosition = DefaultPosition;
+        this.zoomPosition = DefaultPosition;
 
-        // Re-render view if the window is resized
-        window.addEventListener('resize', () => {
-            if(this.days) {
-                this.render();
-            }else {
-                this.renderLandingPage();
-            }
+        this.contextmenu = new ContextMenu(this);
+
+        // Set default language and style, can be overridden from the JSON-files
+        this.meta = DefaultData.meta;
+        this.style = DefaultData.style;
+
+        // Disable default browser behaviour
+        document.addEventListener('wheel', this.onEventPrevent, { passive: false });
+        document.addEventListener('contextmenu', this.onEventPrevent, { passive: false });
+
+        this.canvas.addEventListener('drop', this.onDrop.bind(this));
+        this.canvas.addEventListener('click', this.onClick.bind(this));
+        this.canvas.addEventListener('wheel', this.onMouseWheelZoom.bind(this));
+        this.canvas.addEventListener('keydown', this.onKeyDown.bind(this));
+        this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
+        this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
+        this.canvas.addEventListener('contextmenu', this.onContextmenu.bind(this));
+
+        // Prevent default drag behavior
+        ['dragenter', 'dragover', 'dragleave', 'drop', 'contextmenu'].forEach((eventName: string) => {
+            this.canvas.addEventListener(eventName, this.onEventPrevent);
         });
 
+        // Highlight drop area when item is dragged over it
+        ['dragenter', 'dragover'].forEach((eventName: string) => {
+            this.canvas.addEventListener(eventName, this.highlight.bind(this));
+        });
+
+        // Remove highlight background when file leaves or is dropped
+        ['dragleave', 'drop'].forEach((eventName: string) => {
+            this.canvas.addEventListener(eventName, this.unhighlight.bind(this));
+        });
+
+        // Re-render canvas if the window is resized
+        window.addEventListener('resize', this.onResize.bind(this));
+
+        // Render the landing page as the default screen
         this.renderLandingPage();
+
+        // Set focus to enable keybord inputs
+        this.canvas.focus();
+    }
+    
+    // --------------------------------------------------------------
+    // Event methods
+    // --------------------------------------------------------------
+
+    /**
+     * Prevent Browser default behaviour and propagation
+     * @param event General Event
+     */
+    private onEventPrevent(event: Event): void {
+        event.preventDefault();
+        event.stopPropagation();
     }
 
     /**
-     * Calculates the width of the canvas base on the data to be drawn
+     * MouseDown EventListener
+     * @param event MouseEvent
+     */
+    private onMouseDown(event: MouseEvent): void {
+        this.dragPosition = {
+            left: SCROLLABLE_TARGET.scrollLeft,
+            top: SCROLLABLE_TARGET.scrollTop,
+            x: event.clientX,
+            y: event.clientY
+        };
+
+        // Store references to these events to be able to remove them later
+        this.mouseDragCallback = this.onMouseDragHandler.bind(this);
+        this.mouseUpCallback = this.onMouseUpHandler.bind(this);
+
+        this.canvas.addEventListener('mousemove', this.mouseDragCallback);
+        this.canvas.addEventListener('mouseup', this.mouseUpCallback);
+    }
+
+    /**
+     * MouseMove EventListener
+     * @param event MouseEvent
+     */
+    private onMouseDragHandler(event: MouseEvent): void {
+        this.canvas.style.cursor = 'grabbing';
+        this.isDragging = true;
+
+        // How far the mouse has been moved
+        const dx = event.clientX - this.dragPosition.x;
+        const dy = event.clientY - this.dragPosition.y;
+        
+        // Scroll the element
+        SCROLLABLE_TARGET.scrollLeft = this.dragPosition.left - dx;
+        SCROLLABLE_TARGET.scrollTop = this.dragPosition.top - dy;
+    }
+
+    /**
+     * KeyDown EventListener - Return to home location if h-key is pressed
+     * @param event KeybordEvent
+     */
+    private onKeyDown(event: KeyboardEvent): void {
+        if(!this.hasData()) {
+            return;
+        }
+
+        const key = event.key.toLowerCase();
+
+        const commands = {
+            s: this.scrollTimeline.bind(this, 'start'),
+            e: this.scrollTimeline.bind(this, 'end'),
+            z: this.resetZoom.bind(this)
+        };
+
+        commands[key]?.call();
+    }
+
+    /**
+     * MouseMove EventListener
+     * @param event MouseEvent
+     */
+    private onMouseMove(event: MouseEvent): void {
+        const activity = this.hitDetection(event.clientX, event.clientY);
+        const cursor = activity
+            ? 'pointer'
+            : 'default';
+        
+        this.canvas.style.cursor = cursor;
+    }
+
+    /**
+     * WheelEvent EventListener - Zooms and re-renders the canvas
+     * @param event WheelEvent
+     */
+    private onMouseWheelZoom(event: WheelEvent): void {
+        // Disable default vertical scroll of canvas
+        event.preventDefault();
+        event.stopPropagation();
+
+        // Don't zoom the landing page and only zoom if ctrlKey is down
+        if(!this.hasData() || !event.ctrlKey) {
+            return;
+        }
+
+        this.zoomTimeline(event.deltaY);
+    }
+
+    /**
+     * Handles all click events on the canvas
+     * The coordinates are checked against the plotted activities to display modal window for the correct activity
+     * @param event Browser DragEvent
+     */
+    private onClick(event: MouseEvent): void {
+        this.contextmenu.hide();
+
+        // Check if the canvas was dragged
+        // If so reset the bit and exit this event since it was not intended as a click on an activity
+        if(this.isDragging) {
+            this.isDragging = false;
+            return;
+        }
+
+        const activity = this.hitDetection(event.clientX, event.clientY);
+        if(activity) {
+            const title = `
+                <span style="
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    margin-right: 0.5rem;
+                    flex-shrink: 0;
+                    background-color: ${activity.fillColor};
+                    border: 2px solid ${activity.strokeColor};
+                "></span>
+                ${activity.title}
+            `;
+
+            const content = `
+                <p>${activity.description}</p>
+                <p>${activity.timestamp.toLocaleString(this.meta.locale)}</p>
+            `;
+
+            const modal = new Modal(title, content);
+        }
+    }
+
+    /**
+     * MouseUp EventListene
+     */
+    private onMouseUpHandler(): void {
+        this.canvas.removeEventListener('mousemove', this.mouseDragCallback);
+        this.canvas.removeEventListener('mouseup', this.mouseUpCallback);
+
+        this.canvas.style.cursor = 'default';
+    }
+
+    /**
+     * When a file is dropped on the canvas
+     * @param event Browser DragEvent
+     */
+    private onDrop(event: DragEvent): void{
+        const dataTransfer = event.dataTransfer;
+        const files = dataTransfer.files;
+    
+        // Can only parse and display one file at the time
+        // Take the first file that was dropped
+        const firstFile = files.item(0);
+        this.filename = firstFile.name.substring(0, firstFile.name.lastIndexOf('.')) || firstFile.name;
+        this.parseFile(firstFile);
+    }
+
+    /**
+    * Triggered by event when the window is resized
+    */
+    private onResize(): void {
+        if(this.hasData()) {
+            this.render();
+        }else {
+            this.renderLandingPage();
+        }
+    }
+
+    /**
+     * Contextmenu event to show the custom contextmenu
+     * @param event MouseEvent
+     */
+    private onContextmenu(event: MouseEvent): void {
+        if(this.hasData()) {
+            this.contextmenu.show(event);
+        }
+    }
+
+    // --------------------------------------------------------------
+    // Logical methods
+    // --------------------------------------------------------------
+
+    /**
+     * Callback function from Contextmenu - Exports Timeline as PNG
+     */
+    contextmenuOnExportPNG(): void {
+        const dataURL = this.canvas.toDataURL('image/png', 1.0);
+
+        const download = document.createElement('a');
+        download.href = dataURL;
+        download.download = this.filename + '.png';
+        document.body.appendChild(download);
+        download.click();
+        document.body.removeChild(download);
+    }
+
+    /**
+     * Callback function from Contextmenu - Displays About information
+     */
+    contextmenuOnAbout(): void {
+        const about = new Alert(`
+            <h3 class="at-m-0">Version ${VERSION}</h3>
+            <p>Developed by Qulle</p>
+            <p><a href="//github.com/qulle/activity-timeline" target="_blank" class="at-link">github.com/qulle/activity-timeline</a></p>
+        `);
+    }
+
+    /**
+     * Callback function from Contextmenu - Zooms in
+     */
+    contextmenuOnZoomIn(): void {
+        this.zoomTimeline(-1);
+    }
+
+    /**
+     * Callback function from Contextmenu - Zooms out
+     */
+    contextmenuOnZoomOut(): void {
+        this.zoomTimeline(1);
+    }
+
+    /**
+     * Zoom in or out
+     * @param deltaY 1 = Zoom out, -1 = Zoom in
+     */
+    private zoomTimeline(deltaY: number): void {
+        // Adjust the zoom-value based on the deltaY value
+        if(
+            deltaY < 0 && 
+            this.zoom.value * this.zoom.factor < this.zoom.max
+        ) {
+            this.zoom.value *= this.zoom.factor;
+        }else if(
+            deltaY > 0 &&
+            this.zoom.value / this.zoom.factor > this.zoom.min
+        ) {
+            this.zoom.value /= this.zoom.factor;
+        }
+
+        // Render the Timeline with the new zoom
+        this.render();
+
+        // TODO: Adjust zoom to mouse location
+    }
+
+    /**
+     * Scroll Timeline to vertical center and horizontal discrete location
+     * @param inline 'center' | 'end' | 'nearest' | 'start'
+     */
+    private scrollTimeline(inline: ScrollLogicalPosition): void {
+        this.canvas.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: inline
+        });
+    }
+
+    /**
+     * Resets zoom level to standard and re-renders Timeline
+     */
+    private resetZoom(): void {
+        this.zoom.value = 1;
+        this.render();
+    }
+
+    /**
+     * Highlight drop area when item is dragged over it
+     */
+    private highlight(): void {
+        this.canvas.classList.add('at-canvas--highlight');
+    }
+
+    /**
+     * Remove highlight background when file leaves or is dropped
+     */
+    private unhighlight(): void {
+        this.canvas.classList.remove('at-canvas--highlight');
+    }
+
+    /**
+     * Parse the given file that was dropped and render the Timeline
+     * @param file The file that was dropped
+     */
+    private parseFile(file: File): void {
+        const self = this;
+        const reader = new FileReader();
+        reader.readAsText(file);
+        reader.onloadend = function() {
+            let currentDate: string;
+
+            try {
+                // Parse the JSON-file and convert date and timestamps to date objects using the reviever function
+                const data = JSON.parse(<string>reader.result, function(key, value) {
+                    if(key === 'date') {
+                        currentDate = value;
+                        value = new Date(value);
+                    }else if(key === 'timestamp') {
+                        value = new Date(currentDate + ' ' + value);
+                    }
+
+                    return value;
+                });
+
+                self.setData(data);
+                self.render();
+
+                // Scroll last day into viewport
+                self.scrollTimeline('end');
+            }catch(error: any) {
+                const alert = new Alert('<p>Error parsing the JSON file, check the syntax!</p>');
+            }
+        }
+    }
+
+    /**
+     * Check if the data array has data to render
+     * @returns True if array holds data, False otherwise
+     */
+    private hasData(): boolean {
+        return Array.isArray(this.days);
+    }
+
+    /**
+     * Calculates the width of the canvas base on the data to be rendered
      * @returns Width of the canvas, minimum width is the window.innerWidth
      */
     private calculateWidth(): number {
         // window.innerWidth is the minimum width of the canvas
         let width = window.innerWidth;
 
-        const calculatedWidth = TimelineConstants.xPadding + (TimelineConstants.stepDistanceXAxis * TimelineConstants.amplification * this.days.length);
+        const calculatedWidth = DefaultConstants.xPadding + (DefaultConstants.stepDistanceXAxis * DefaultConstants.amplification * this.days.length * this.zoom.value);
 
         if(calculatedWidth > width) {
             width = calculatedWidth;
@@ -53,7 +436,7 @@ class Timeline {
     }
 
     /**
-     * Calculates the height of the canvas base on the data to be drawn
+     * Calculates the height of the canvas base on the data to be rendered
      * @returns Height of the canvas, minimum height is the window.innerHeight
      */
     private calculateHeight(): number {
@@ -61,7 +444,7 @@ class Timeline {
         let height = window.innerHeight;
         let maxActivitiesOnYAxis = 0;
 
-        // Find the day with most activites in both directions on the Y-axis
+        // Find the day with most activites to be rendered on the Y-axis
         this.days.forEach(day => {
             if(day.activities.length > maxActivitiesOnYAxis) {
                 maxActivitiesOnYAxis = day.activities.length;
@@ -69,7 +452,7 @@ class Timeline {
         });
 
         // Calculate appropriate height
-        const calculatedHeight = TimelineConstants.yPadding + (TimelineConstants.stepDistanceYAxis * maxActivitiesOnYAxis * 2);
+        const calculatedHeight = DefaultConstants.yPadding + (DefaultConstants.stepDistanceYAxis * maxActivitiesOnYAxis * 2 * this.zoom.value);
 
         if(calculatedHeight > height) {
             height = calculatedHeight;
@@ -79,42 +462,115 @@ class Timeline {
     }
 
     /**
-     * Calculates the Y-coordinate for where to draw the X-axis
-     * @returns Y-coordinate for where to draw the X-axis
+     * Calculates the Y-coordinate for where to render the X-axis
+     * @returns Y-coordinate for where to render the X-axis
      */
     private getVerticalMid(): number {
-        return this.canvas.height / 2 - this.timelineStyle.lineThickness / 2;
+        return (this.canvas.height / 2 - this.style.lineThickness / 2) / this.zoom.value;
     }
 
     /**
      * Check if date is todays date
-     * @param date String value of date to be checked
+     * @param date Value to be checked
      * @returns True if date is today otherwise False
      */
-    private isToday(date: string): boolean {
-        const left  = new Date(date);
-        const right = new Date();
+    private isToday(date: Date): boolean {
+        const now = new Date();
 
-        return left.getFullYear() === right.getFullYear() &&
-               left.getMonth()    === right.getMonth()    && 
-               left.getDate()     === right.getDate();
+        return date.getFullYear() === now.getFullYear() &&
+               date.getMonth()    === now.getMonth()    && 
+               date.getDate()     === now.getDate();
     }
 
     /**
      * Gets the long version of weekday from a given date
-     * @param date String value of date to be converted to weekday
+     * @param date Value to be converted to weekday
      * @returns Weekday in format [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
      */
-    private getWeekDayName(date: string): string {
+    private getWeekDayName(date: Date): string {
         // Translate date to weekday name
-        const weekDay = new Date(date).toLocaleString(this.locale, { weekday: 'long' });
+        const weekDay = date.toLocaleString(this.meta.locale, { weekday: 'long' });
         
         // Make the first letter capialized
         return weekDay.charAt(0).toUpperCase() + weekDay.slice(1);
     }
 
     /**
-     * Draws a circle in the canvas at a given coordinate
+     * Checks direction to render activities on the Y-axis
+     * @param index Iterator-index from loop
+     * @returns True if rendering towards top, False if towards bottom
+     */
+    private isTop(index: number): boolean {
+        return index % 2 === 0;
+    }
+
+    /**
+     * Get the Activity that corresponds to the clicked location in the canvas
+     * @param x X-coordinate
+     * @param y Y-coordinate
+     * @returns The clicked Activity, undefined if no activity is found
+     */
+    private hitDetection(x: number, y: number): Activity {
+        if(!this.hasData()) {
+            return undefined;
+        }
+
+        // The coordinates must be translated to accommodate for scrolling in the canvas
+        const rect = this.canvas.getBoundingClientRect();
+        const relX = (x - rect.left) / this.zoom.value;
+        const relY = (y - rect.top) / this.zoom.value;
+
+        // How far the detection will be checked away from the clicked coordinate
+        const tolerance = DefaultConstants.radius;
+
+        // TODO: Big O - Time Complexity, make it more efficient using another data structure
+        for(let a = 0; a < this.days.length; a++) {
+            for(let b = 0; b < this.days[a].activities.length; b++) {
+                const activity = this.days[a].activities[b];
+                if(
+                    activity.x >= (relX - tolerance) && 
+                    activity.x <= (relX + tolerance) &&
+                    activity.y >= (relY - tolerance) && 
+                    activity.y <= (relY + tolerance)
+                ) {
+                    return activity;
+                }
+            }
+        }
+
+        return undefined;
+    }
+
+    /**
+     * Sets the data to be rendered on the Timeline
+     * Sorts both days and activites in ascending order
+     * @param data Array of days to be rendered
+     */
+    setData(data: Data): void {
+        // Override default data with data from the JSON-file
+        this.meta = { ...DefaultData.meta, ...data.meta };
+        this.style = { ...DefaultData.style, ...data.style };
+        this.days = [ ...DefaultData.days, ...data.days ];
+
+        // Sort days in ascending order
+        this.days.sort((left, right) => {
+            return left.date.getTime() - right.date.getTime();
+        });
+
+        // Sort activities in each day in ascending order
+        this.days.forEach(day => {
+            day.activities.sort((left, right) => {
+                return left.timestamp.getTime() - right.timestamp.getTime();
+            });
+        });
+    }
+
+    // --------------------------------------------------------------
+    // Render methods
+    // --------------------------------------------------------------
+
+    /**
+     * Renders a circle in the canvas at a given coordinate
      * @param ctx HTMLCanvas 2d-context
      * @param x X-coordinate 
      * @param y Y-cordinate
@@ -122,7 +578,7 @@ class Timeline {
      * @param fillColor Fillcolor of the circle
      * @param strokeColor Strokecolor of the circle
      */
-    private drawCircle(
+    private renderCircle(
         ctx: CanvasRenderingContext2D, 
         x: number, 
         y: number, 
@@ -139,53 +595,10 @@ class Timeline {
     }
 
     /**
-     * Checks direction to draw activities on the Y-axis
-     * @param index Iterator-index from loop
-     * @returns True if drawing towards top, False if towards bottom
-     */
-    private isTop(index: number): boolean {
-        return index % 2 === 0;
-    }
-
-    /**
-     * Sets the data to be drawn on the timeline
-     * Sorts both days and activites in ascending order
-     * @param data Array of days to be drawn
-     */
-    setData(data: Day[]): void {
-
-        // TODO: Errohandling and rename the data: Day parameter.
-        // It's confusing the way it's named now when the Day is wrapped inside the Data but the data is a Day[]....
-        if('days' in data) {
-            this.days = data['days'];
-        }else {
-            this.days = <Day[]>[];
-        }
-        
-        // Reset to default style for each new file that is dropped
-        this.timelineStyle = DefaultTimelineStyle;
-
-        // Override default style with data from the JSON-file
-        this.timelineStyle = {...this.timelineStyle, ...data['style']};
-
-        // Sort days in ascending order
-        this.days.sort((left, right) => {
-            return new Date(left.date).getTime() - new Date(right.date).getTime();
-        });
-
-        // Sort activities in each day in ascending order
-        this.days.forEach(day => {
-            day.activities.sort((left, right) => {
-                return new Date(day.date + ' ' + left.timestamp).getTime() - new Date(day.date + ' ' + right.timestamp).getTime();
-            });
-        });
-    }
-
-    /**
      * Renders the landing page when the app is first started
      */
     renderLandingPage(): void {
-        // Context to draw elements on
+        // Context to render elements on
         const ctx = this.canvas.getContext('2d');
 
         // Default canvas size same as window
@@ -196,18 +609,18 @@ class Timeline {
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         // Calculate appropriate dimensions for the drop square
-        const dropSquareWidth = window.innerWidth < 620 
+        const dropSquareWidth = window.innerWidth < DefaultConstants.ladingPageWidth + DefaultConstants.canvasInternalPadding 
             ? 0.9 * window.innerWidth 
-            : 600;
+            : DefaultConstants.ladingPageWidth;
 
-        const dropSquareHeight = window.innerHeight < 320 
+        const dropSquareHeight = window.innerHeight < DefaultConstants.ladingPageHeight + DefaultConstants.canvasInternalPadding 
             ? 0.9 * window.innerHeight 
-            : 300;
+            : DefaultConstants.ladingPageHeight;
 
-        // Draw drop square
+        // Render drop square
         ctx.fillStyle = '#E9E9E9';
-        ctx.lineWidth = this.timelineStyle.lineThickness;
-        ctx.strokeStyle = this.timelineStyle.strokeColor;
+        ctx.lineWidth = this.style.lineThickness;
+        ctx.strokeStyle = this.style.strokeColor;
         ctx.setLineDash([6]);
         ctx.fillRect(
             window.innerWidth / 2 - dropSquareWidth / 2,
@@ -222,33 +635,42 @@ class Timeline {
             dropSquareHeight
         );
 
-        // Note: The Path2D string is generated for 76*100 size
-        const dropIconDimensions = { width: 76, height: 100 };
-        const dropIconSVGPath = new Path2D('M38 100C47.9456 100 57.4839 96.0491 64.5165 89.0165C71.5491 81.9839 75.5 72.4456 75.5 62.5C75.5 52.1563 68.4875 44.35 60.3 35.2375C52.0875 26.1 42.6875 15.6438 38 0C38 0 0.5 35.5375 0.5 62.5C0.5 72.4456 4.45088 81.9839 11.4835 89.0165C18.5161 96.0491 28.0544 100 38 100ZM29.5375 29.0375L33.9625 33.4625C32.15 35.275 26.9125 41.6562 22.0438 51.4L16.4562 48.6C21.5812 38.3437 27.1875 31.3937 29.5375 29.0375Z');
+        // Note: The Path2D SVG is generated for size 100 * 76
+        const dropIconDimensions = { width: 100, height: 76 };
+        const dropIconSVGPath = new Path2D('M37.5 21.875C37.5 19.3886 38.4877 17.004 40.2459 15.2459C42.004 13.4877 44.3886 12.5 46.875 12.5H53.125C55.6114 12.5 57.996 13.4877 59.7541 15.2459C61.5123 17.004 62.5 19.3886 62.5 21.875V28.125C62.5 30.6114 61.5123 32.996 59.7541 34.7541C57.996 36.5123 55.6114 37.5 53.125 37.5V43.75H87.5C88.3288 43.75 89.1237 44.0792 89.7097 44.6653C90.2958 45.2513 90.625 46.0462 90.625 46.875V53.125C90.625 53.9538 90.2958 54.7487 89.7097 55.3347C89.1237 55.9208 88.3288 56.25 87.5 56.25C86.6712 56.25 85.8763 55.9208 85.2903 55.3347C84.7042 54.7487 84.375 53.9538 84.375 53.125V50H53.125V53.125C53.125 53.9538 52.7958 54.7487 52.2097 55.3347C51.6237 55.9208 50.8288 56.25 50 56.25C49.1712 56.25 48.3763 55.9208 47.7903 55.3347C47.2042 54.7487 46.875 53.9538 46.875 53.125V50H15.625V53.125C15.625 53.9538 15.2958 54.7487 14.7097 55.3347C14.1237 55.9208 13.3288 56.25 12.5 56.25C11.6712 56.25 10.8763 55.9208 10.2903 55.3347C9.70424 54.7487 9.375 53.9538 9.375 53.125V46.875C9.375 46.0462 9.70424 45.2513 10.2903 44.6653C10.8763 44.0792 11.6712 43.75 12.5 43.75H46.875V37.5C44.3886 37.5 42.004 36.5123 40.2459 34.7541C38.4877 32.996 37.5 30.6114 37.5 28.125V21.875ZM0 71.875C0 69.3886 0.98772 67.004 2.74587 65.2459C4.50403 63.4877 6.8886 62.5 9.375 62.5H15.625C18.1114 62.5 20.496 63.4877 22.2541 65.2459C24.0123 67.004 25 69.3886 25 71.875V78.125C25 80.6114 24.0123 82.996 22.2541 84.7541C20.496 86.5123 18.1114 87.5 15.625 87.5H9.375C6.8886 87.5 4.50403 86.5123 2.74587 84.7541C0.98772 82.996 0 80.6114 0 78.125L0 71.875ZM37.5 71.875C37.5 69.3886 38.4877 67.004 40.2459 65.2459C42.004 63.4877 44.3886 62.5 46.875 62.5H53.125C55.6114 62.5 57.996 63.4877 59.7541 65.2459C61.5123 67.004 62.5 69.3886 62.5 71.875V78.125C62.5 80.6114 61.5123 82.996 59.7541 84.7541C57.996 86.5123 55.6114 87.5 53.125 87.5H46.875C44.3886 87.5 42.004 86.5123 40.2459 84.7541C38.4877 82.996 37.5 80.6114 37.5 78.125V71.875ZM75 71.875C75 69.3886 75.9877 67.004 77.7459 65.2459C79.504 63.4877 81.8886 62.5 84.375 62.5H90.625C93.1114 62.5 95.496 63.4877 97.2541 65.2459C99.0123 67.004 100 69.3886 100 71.875V78.125C100 80.6114 99.0123 82.996 97.2541 84.7541C95.496 86.5123 93.1114 87.5 90.625 87.5H84.375C81.8886 87.5 79.504 86.5123 77.7459 84.7541C75.9877 82.996 75 80.6114 75 78.125V71.875Z');
 
-        // Draw drop text
+        // Render drop text
         const dropLabel = 'DROP TIMELINE JSON { }';
         ctx.font = `italic bold 20px Arial`;
-        ctx.fillStyle = this.timelineStyle.textColor;
+        ctx.fillStyle = this.style.textColor;
         ctx.fillText(
             dropLabel, 
             window.innerWidth / 2 - ctx.measureText(dropLabel).width / 2,
             window.innerHeight / 2 + dropIconDimensions.height / 2,
         );
 
-        // Draw drop icon
+        // Render version text
+        const versionLabel = 'Version ' + VERSION;
+        ctx.font = `italic 14px Arial`;
+        ctx.fillText(
+            versionLabel, 
+            window.innerWidth / 2 - ctx.measureText(versionLabel).width / 2,
+            window.innerHeight / 2 + dropIconDimensions.height / 2 + 20,
+        );
+
+        // Render drop icon
         ctx.translate(
             (window.innerWidth / 2) - dropIconDimensions.width / 2, 
-            (window.innerHeight / 2) - dropIconDimensions.height
+            (window.innerHeight / 2) - dropIconDimensions.height - 20
         );
         ctx.fill(dropIconSVGPath);
     }
 
     /**
-     * Renders the timeline on the canvas based on the given data
+     * Renders the Timeline on the canvas based on the given data
      */
     render(): void {
-        // Context to draw elements on
+        // Context to render elements on
         const ctx = this.canvas.getContext('2d');
 
         // Set canvas width and height based no the data
@@ -259,93 +681,103 @@ class Timeline {
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         // Canvas background
-        ctx.fillStyle = this.timelineStyle.backgroundColor;
+        ctx.fillStyle = this.style.backgroundColor;
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Note: This will affect all things that are drawn. 
+        // In some places values must be corrected by multiplying or dividing with the zoom.value
+        ctx.scale(this.zoom.value, this.zoom.value);
 
         // Get the mid of the canvas, must come after the calculate width/height
         const mid = this.getVerticalMid();
 
         // Default style
-        ctx.font = `bold ${this.timelineStyle.fontSize}px Arial`;
-        ctx.strokeStyle = this.timelineStyle.timelineStrokeColor;
-        ctx.lineWidth = this.timelineStyle.lineThickness;
+        ctx.font = `bold ${this.style.fontSize}px Arial`;
+        ctx.strokeStyle = this.style.timelineStrokeColor;
+        ctx.lineWidth = this.style.lineThickness;
         ctx.lineCap = <CanvasLineCap>'round';
 
-        // Draw main timeline
+        // Render main Timeline
         ctx.beginPath();
-        ctx.moveTo(TimelineConstants.canvasInternalPadding, mid);
-        ctx.lineTo(this.canvas.width - TimelineConstants.canvasInternalPadding, mid);
+        ctx.moveTo(DefaultConstants.canvasInternalPadding, mid);
+        ctx.lineTo(this.canvas.width / this.zoom.value - DefaultConstants.canvasInternalPadding, mid);
         ctx.stroke();
 
-        // Draw each day on timeline
+        // Render each day on Timeline
         this.days.forEach((day, index) => {
-            const x = TimelineConstants.xPadding + (TimelineConstants.stepDistanceXAxis * TimelineConstants.amplification * index);
+            const x = DefaultConstants.xPadding + (DefaultConstants.stepDistanceXAxis * DefaultConstants.amplification * index);
             const y = mid;
 
-            // If placement is top or bottom
+            // If placement is top or bottom direction on the Y-axis
             const sign = this.isTop(index) 
                 ? 1 
                 : -1;
 
             // Adjust for the text height on top positioned text
-            const signAdjustment = sign === -1 
-                ? this.timelineStyle.fontSize / 2 
+            const signAdjustment = !this.isTop(index) 
+                ? this.style.fontSize / 2 
                 : 0;
 
-            // Draw day timeline
-            ctx.strokeStyle = this.timelineStyle.timelineStrokeColor;
+            // Render day Timeline
+            ctx.strokeStyle = this.style.timelineStrokeColor;
             ctx.beginPath();
             ctx.setLineDash([5, 8]);
             ctx.moveTo(x, y);
-            ctx.lineTo(x, y + (day.activities.length * TimelineConstants.stepDistanceYAxis * -sign));
+            ctx.lineTo(x, y + (day.activities.length * DefaultConstants.stepDistanceYAxis * -sign));
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Draw activities from that day
+            // Render activities from that day
             day.activities.forEach((activity, index) => {
-                // Draw activity-circle
-                this.drawCircle(
+                // Render activity-circle
+                const posX = x;
+                const posY = y + DefaultConstants.stepDistanceYAxis * (index + 1) * -sign;
+                this.renderCircle(
                     ctx, 
-                    x, 
-                    y + TimelineConstants.stepDistanceYAxis * (index + 1) * -sign, 
-                    TimelineConstants.radius, 
+                    posX, 
+                    posY, 
+                    DefaultConstants.radius, 
                     activity.fillColor, 
                     activity.strokeColor 
                 );
 
-                // Draw activity-label
-                ctx.fillStyle = this.timelineStyle.textColor;
+                // Store coordinates where the activity was rendered, this will be used in the click-event
+                activity.x = posX;
+                activity.y = posY;
+
+                // Render activity-label
+                ctx.fillStyle = this.style.textColor;
                 ctx.fillText(
                     activity.title, 
-                    x + TimelineConstants.radius * 1.5, 
-                    y + TimelineConstants.stepDistanceYAxis * (index + 1) * -sign - 10 + this.timelineStyle.fontSize / 2
+                    x + DefaultConstants.radius * 1.5, 
+                    y + DefaultConstants.stepDistanceYAxis * (index + 1) * -sign - 10 + this.style.fontSize / 2
                 );
                 ctx.fillText(
-                    new Date(day.date + ' ' + activity.timestamp).toLocaleTimeString(), 
-                    x + TimelineConstants.radius * 1.5, 
-                    y + TimelineConstants.stepDistanceYAxis * (index + 1) * -sign + 8 + this.timelineStyle.fontSize / 2
+                    activity.timestamp.toLocaleTimeString(this.meta.locale), 
+                    x + DefaultConstants.radius * 1.5, 
+                    y + DefaultConstants.stepDistanceYAxis * (index + 1) * -sign + 8 + this.style.fontSize / 2
                 );
             });
 
-            // Draw date-circle on timeline
-            this.drawCircle(
+            // Render date-circle on Timeline
+            this.renderCircle(
                 ctx, 
                 x, 
                 y, 
-                TimelineConstants.radius, 
-                this.timelineStyle.fillColor, 
-                this.timelineStyle.strokeColor
+                DefaultConstants.radius, 
+                this.style.fillColor, 
+                this.style.strokeColor
             );
 
-            // Draw date-label
+            // Render date-label
             const dateLabel = this.isToday(day.date) 
-                ? day.date + ' (Today)' 
-                : day.date + ' (' + this.getWeekDayName(day.date) + ')';
-            ctx.fillStyle = this.timelineStyle.textColor;
+                ? day.date.toLocaleDateString(this.meta.locale) + ' (Today)' 
+                : day.date.toLocaleDateString(this.meta.locale) + ' (' + this.getWeekDayName(day.date) + ')';
+            ctx.fillStyle = this.style.textColor;
             ctx.fillText(
                 dateLabel, 
                 x - ctx.measureText(dateLabel).width / 2, 
-                y + signAdjustment + TimelineConstants.radius * 2 * sign
+                y + signAdjustment + DefaultConstants.radius * 2 * sign
             );
         });
     }

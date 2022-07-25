@@ -1,0 +1,54 @@
+.at-btn {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 400;
+    text-align: center;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    background-color: transparent;
+    font-size: 1rem;
+    border-radius: $border-radius;
+    border: none;
+    cursor: pointer;
+    box-shadow: $box-shadow-mid;
+    color: $color-light;
+    padding: .5rem;
+    text-shadow: $text-shadow-light;
+    
+    // Disable blue-highlight on touch devices
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+    &:focus {
+        -webkit-tap-highlight-color: transparent;
+        outline: none;
+        -ms-touch-action: manipulation;
+        touch-action: manipulation;
+    }
+
+    &--blank {
+        box-shadow: none;
+        padding: 0;
+        color: $color-dark;
+
+        &:focus {
+            box-shadow: 0 0 0 $shadow-focus-width rgba($color-gray-mid, .5);
+        }
+    }
+
+    &--blue-mid {
+        background-color: $color-blue-mid;
+
+        &:focus {
+            box-shadow: 0 0 0 $shadow-focus-width rgba($color-blue-mid, .5);
+        }
+    }
+}
