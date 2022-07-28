@@ -1,8 +1,5 @@
 import { Zoom } from "../models/zoom.model";
 
-/**
- * Default object containing zoom data
- */
 const DefaultZoom: Zoom = {
     value: 1,
     factor: 1.1,

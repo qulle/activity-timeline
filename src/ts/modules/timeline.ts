@@ -299,7 +299,7 @@ class Timeline {
         const about = new Alert(`
             <h3 class="at-m-0">Version ${VERSION}</h3>
             <p>Developed by Qulle</p>
-            <p><a href="//github.com/qulle/activity-timeline" target="_blank" class="at-link">github.com/qulle/activity-timeline</a></p>
+            <p><a href="https://github.com/qulle/activity-timeline" target="_blank" class="at-link">github.com/qulle/activity-timeline</a></p>
         `);
     }
 

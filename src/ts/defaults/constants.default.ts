@@ -1,8 +1,5 @@
 import { Constants } from "../models/constants.model";
 
-/**
- * Default object containing constants used when rendering the Timeline
- */
 const DefaultConstants: Constants = {
     ladingPageWidth: 600,
     ladingPageHeight: 300,

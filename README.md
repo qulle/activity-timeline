@@ -18,7 +18,7 @@ The application is portable, launch the HTML file in the browser and drop a JSON
 ### Shortcut keys
 - `s` pans to the start of the Timeline
 - `e` pans to the end of the Timeline
-- `z` resets the zoom level and pans to the end of the Timeline
+- `z` resets to the default zoom level
 - `ctrl + wheel` zooms the Timeline 
 
 ### Data
@@ -49,11 +49,11 @@ The data is given in an array of days. The description is displayed in a modal w
             "date": "2022-07-10",
             "activities": [
                 {
-                    "title": "Restarted application pool",
+                    "title": "New release application A",
                     "description": "Some additional information about the activity",
-                    "timestamp": "18:36",
-                    "fillColor": "#FAD7AC",
-                    "strokeColor": "#C27B25"
+                    "timestamp": "12:05",
+                    "fillColor": "#B1DDF0",
+                    "strokeColor": "#10739E"
                 }
             ]
         }
