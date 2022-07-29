@@ -116,18 +116,6 @@ Use the following command to remove dist directory. Uses `rm -rf dist/`
 $ npm run clean
 ```
 
-Check for dependency updates.
-```
-$ npm outdated
-```
-
-Install dependency updates.
-```
-$ npm update --save
-```
-
-**Note** that from npm version `7.0.0` the command `$ npm update` does not longer update the `package.json` file. From npm version `8.3.2` the command to run is `$ npm update --save` or to always apply the save option add `save=true` to the `.npmrc` file.
-
 ## License
 [BSD-2-Clause License](LICENSE)
 
