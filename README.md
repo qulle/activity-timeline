@@ -19,7 +19,8 @@ The application is portable, launch the HTML file in the browser and drop a JSON
 - `s` pans to the start of the Timeline
 - `e` pans to the end of the Timeline
 - `z` resets to the default zoom level
-- `ctrl + wheel` zooms the Timeline 
+- `ctrl + wheel` zooms the Timeline
+- `click + drag` pans the Timeline
 
 ### Data
 The data is given in an array of days. The description is displayed in a modal window when an activity is clicked in the Timeline. The days and activities are sorted in the application to always be shown in the correct order according to the date and timestamp.
@@ -89,7 +90,7 @@ The local timezone can be controlled through parameters in the JSON file meta-no
 ```
 
 ## Get started
-The dev-environment uses NPM so you need to have [Node.js](https://nodejs.org/en/) installed. I use Node version *16.14.2* and NPM version *8.7.0*.
+The dev-environment uses NPM so you need to have [Node.js](https://nodejs.org/en/) installed. I use Node version *16.16.0* and NPM version *8.11.0*.
 
 Clone the repo.
 ```
@@ -111,7 +112,7 @@ Make build for distribution.
 $ npm run build
 ```
 
-Use the following command to remove dist directory. Uses `rm -rf dist/`
+Use the following command to remove dist directory. Uses `rm -rf dist/ .parcel-cache/`
 ```
 $ npm run clean
 ```

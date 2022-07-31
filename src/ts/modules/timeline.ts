@@ -45,7 +45,6 @@ class Timeline {
         this.zoom = DefaultZoom;
         this.dragPosition = DefaultPosition;
         this.zoomPosition = DefaultPosition;
-
         this.contextmenu = new ContextMenu(this);
 
         // Set default language and style, can be overridden from the JSON-files
@@ -53,8 +52,9 @@ class Timeline {
         this.style = DefaultData.style;
 
         // Disable default browser behaviour
-        document.addEventListener('wheel', this.onEventPrevent, { passive: false });
-        document.addEventListener('contextmenu', this.onEventPrevent, { passive: false });
+        ['wheel', 'contextmenu'].forEach((eventName: string) => {
+            document.addEventListener(eventName, this.onEventPrevent, { passive: true });
+        });
 
         this.canvas.addEventListener('drop', this.onDrop.bind(this));
         this.canvas.addEventListener('click', this.onClick.bind(this));
@@ -244,11 +244,11 @@ class Timeline {
      */
     private onDrop(event: DragEvent): void{
         const dataTransfer = event.dataTransfer;
-        const files = dataTransfer.files;
+        const files = dataTransfer!.files;
     
         // Can only parse and display one file at the time
         // Take the first file that was dropped
-        const firstFile = files.item(0);
+        const firstFile = <File>files.item(0);
         this.filename = firstFile.name.substring(0, firstFile.name.lastIndexOf('.')) || firstFile.name;
         this.parseFile(firstFile);
     }
@@ -339,6 +339,7 @@ class Timeline {
         this.render();
 
         // TODO: Adjust zoom to mouse location
+        console.log('Parcel rebuild source test');
     }
 
     /**
@@ -415,7 +416,7 @@ class Timeline {
      * @returns True if array holds data, False otherwise
      */
     private hasData(): boolean {
-        return Array.isArray(this.days);
+        return Array.isArray(this.days) && this.days.length > 0;
     }
 
     /**
@@ -510,7 +511,7 @@ class Timeline {
      * @param y Y-coordinate
      * @returns The clicked Activity, undefined if no activity is found
      */
-    private hitDetection(x: number, y: number): Activity {
+    private hitDetection(x: number, y: number): Activity | undefined {
         if(!this.hasData()) {
             return undefined;
         }
@@ -599,7 +600,7 @@ class Timeline {
      */
     renderLandingPage(): void {
         // Context to render elements on
-        const ctx = this.canvas.getContext('2d');
+        const ctx = <CanvasRenderingContext2D>this.canvas.getContext('2d');
 
         // Default canvas size same as window
         this.canvas.width = window.innerWidth;
@@ -671,7 +672,7 @@ class Timeline {
      */
     render(): void {
         // Context to render elements on
-        const ctx = this.canvas.getContext('2d');
+        const ctx = <CanvasRenderingContext2D>this.canvas.getContext('2d');
 
         // Set canvas width and height based no the data
         this.canvas.width = this.calculateWidth();
