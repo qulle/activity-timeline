@@ -1,6 +1,13 @@
 {
     "meta": {
+        "version": "1.0.0",
         "locale": "en-us"
+    },
+    "style": {
+        "textColor": "#D3D9E6",
+        "timelineStrokeColor": "#D3D9E6",
+        "strokeColor": "#353C4B",
+        "backgroundColor": "#3B4352"
     },
     "days": [
         {

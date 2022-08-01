@@ -23,6 +23,6 @@ class Alert extends DialogBase {
         document.body.appendChild(this.dialogBackdrop);
         this.dialogBackdrop.focus();
     }
-}
+};
 
 export default Alert;

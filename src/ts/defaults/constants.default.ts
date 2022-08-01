@@ -1,6 +1,7 @@
 import { Constants } from "../models/constants.model";
 
 const DefaultConstants: Constants = {
+    highlightClass: 'at-canvas--highlight',
     ladingPageWidth: 600,
     ladingPageHeight: 300,
     radius: 18,

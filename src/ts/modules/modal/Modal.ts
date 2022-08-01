@@ -10,6 +10,6 @@ class Modal extends ModalBase {
 
         this.show(modalContent);
     }
-}
+};
 
 export default Modal;

@@ -6,4 +6,4 @@ export interface Activity {
     strokeColor: string,
     x: number,
     y: number
-}
+};

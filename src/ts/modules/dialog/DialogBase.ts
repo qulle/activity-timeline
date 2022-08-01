@@ -21,7 +21,7 @@ class DialogBase {
         });
     }
 
-    private bounceAnimation(event: MouseEvent) {
+    private bounceAnimation(event: MouseEvent): void {
         // To prevent trigger the animation if clicked in the dialog and not the backdrop
         if(event.target !== this.dialogBackdrop) {
             return;
@@ -37,10 +37,10 @@ class DialogBase {
         dialog.classList.add(ANIMATION_CLASS);
     }
 
-    close() {
+    close(): void {
         this.dialogBackdrop.removeEventListener('keydown', trapFocusKeyListener);
         this.dialogBackdrop.remove();
     }
-}
+};
 
 export default DialogBase;

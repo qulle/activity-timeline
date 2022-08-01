@@ -52,7 +52,7 @@ class ModalBase {
         });
     }
 
-    private bounceAnimation(event: MouseEvent) {
+    private bounceAnimation(event: MouseEvent): void {
         // To prevent trigger the animation if clicked in the modal and not the backdrop
         if(event.target !== this.modalBackdrop) {
             return;
@@ -66,16 +66,16 @@ class ModalBase {
         this.modal.classList.add(ANIMATION_CLASS);
     }
 
-    show(modalContent: any) {
+    show(modalContent: any): void {
         this.modal.appendChild(modalContent);
         document.body.appendChild(this.modalBackdrop);
         this.modal.focus();
     }
 
-    close() {
+    close(): void {
         this.modalBackdrop.removeEventListener('keydown', trapFocusKeyListener);
         this.modalBackdrop.remove();
     }
-}
+};
 
 export default ModalBase;

@@ -1,4 +1,5 @@
 export interface Constants {
+    highlightClass: string,
     ladingPageWidth: number,
     ladingPageHeight: number,
     radius: number,

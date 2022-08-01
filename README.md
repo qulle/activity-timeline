@@ -78,10 +78,11 @@ The theme can be controlled through parameters in the JSON file style-node. If n
 ```
 
 ### Meta information
-The local timezone can be controlled through parameters in the JSON file meta-node. If no meta-node is present the application falls back to the default version using `en-us`.
+The local timezone can be controlled through parameters in the JSON file meta-node. If no meta-node is present the application falls back to the default version using `en-us`. The version number is just a help to indicate to what version the JSON file was created. If no version number is configured the application version will be assumed.
 ```json
 {
     "meta": {
+        "version": "1.0.0",
         "locale": "sv-se"
     },
     "style": {},

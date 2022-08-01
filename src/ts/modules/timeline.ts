@@ -1,14 +1,15 @@
 import { Day } from '../models/day.model';
 import { Data } from '../models/data.model';
 import { Zoom } from '../models/zoom.model';
+import { Meta } from '../models/meta.model';
 import { Style } from '../models/style.model';
 import { Position } from '../models/position.model';
+import { Activity } from '../models/activity.model';
+import { Coordinate } from '../models/coordinate.model';
 import { DefaultData } from '../defaults/data.default';
 import { DefaultZoom } from '../defaults/zoom.default';
 import { DefaultPosition } from '../defaults/position.default';
 import { DefaultConstants } from '../defaults/constants.default';
-import { Activity } from '../models/activity.model';
-import { Meta } from '../models/meta.model';
 import ContextMenu from './contextmenu/Contextmenu';
 import Modal from './modal/Modal';
 import Alert from './dialog/Alert';
@@ -32,7 +33,6 @@ class Timeline {
     private zoom: Zoom;
     private isDragging: boolean;
     private dragPosition: Position;
-    private zoomPosition: Position;
     private filename: string;
 
     // Intermittent event listeners
@@ -44,7 +44,6 @@ class Timeline {
         this.isDragging = false;
         this.zoom = DefaultZoom;
         this.dragPosition = DefaultPosition;
-        this.zoomPosition = DefaultPosition;
         this.contextmenu = new ContextMenu(this);
 
         // Set default language and style, can be overridden from the JSON-files
@@ -53,9 +52,13 @@ class Timeline {
 
         // Disable default browser behaviour
         ['wheel', 'contextmenu'].forEach((eventName: string) => {
-            document.addEventListener(eventName, this.onEventPrevent, { passive: true });
+            document.addEventListener(eventName, this.onEventPrevent, { passive: false });
         });
 
+        // Re-render canvas if the window is resized
+        window.addEventListener('resize', this.onResize.bind(this));
+
+        // Application specific listeners
         this.canvas.addEventListener('drop', this.onDrop.bind(this));
         this.canvas.addEventListener('click', this.onClick.bind(this));
         this.canvas.addEventListener('wheel', this.onMouseWheelZoom.bind(this));
@@ -79,9 +82,6 @@ class Timeline {
             this.canvas.addEventListener(eventName, this.unhighlight.bind(this));
         });
 
-        // Re-render canvas if the window is resized
-        window.addEventListener('resize', this.onResize.bind(this));
-
         // Render the landing page as the default screen
         this.renderLandingPage();
 
@@ -95,7 +95,7 @@ class Timeline {
 
     /**
      * Prevent Browser default behaviour and propagation
-     * @param event General Event
+     * @param event Event
      */
     private onEventPrevent(event: Event): void {
         event.preventDefault();
@@ -119,7 +119,10 @@ class Timeline {
         this.mouseUpCallback = this.onMouseUpHandler.bind(this);
 
         this.canvas.addEventListener('mousemove', this.mouseDragCallback);
-        this.canvas.addEventListener('mouseup', this.mouseUpCallback);
+        
+        // This listener must be on the document and not the canvas
+        // Or it will get stuck if the mouse is moved outside the window/canvas
+        document.addEventListener('mouseup', this.mouseUpCallback);
     }
 
     /**
@@ -134,13 +137,12 @@ class Timeline {
         const dx = event.clientX - this.dragPosition.x;
         const dy = event.clientY - this.dragPosition.y;
         
-        // Scroll the element
         SCROLLABLE_TARGET.scrollLeft = this.dragPosition.left - dx;
         SCROLLABLE_TARGET.scrollTop = this.dragPosition.top - dy;
     }
 
     /**
-     * KeyDown EventListener - Return to home location if h-key is pressed
+     * KeyDown EventListener
      * @param event KeybordEvent
      */
     private onKeyDown(event: KeyboardEvent): void {
@@ -186,7 +188,7 @@ class Timeline {
             return;
         }
 
-        this.zoomTimeline(event.deltaY);
+        this.zoomTimeline(event.clientX, event.clientY, event.deltaY);
     }
 
     /**
@@ -229,11 +231,14 @@ class Timeline {
     }
 
     /**
-     * MouseUp EventListene
+     * MouseUp EventListener
      */
     private onMouseUpHandler(): void {
         this.canvas.removeEventListener('mousemove', this.mouseDragCallback);
-        this.canvas.removeEventListener('mouseup', this.mouseUpCallback);
+
+        // This listener must be on the document and not the canvas
+        // Or it will get stuck if the mouse is moved outside the window/canvas
+        document.removeEventListener('mouseup', this.mouseUpCallback);
 
         this.canvas.style.cursor = 'default';
     }
@@ -280,8 +285,10 @@ class Timeline {
 
     /**
      * Callback function from Contextmenu - Exports Timeline as PNG
+     * @param x X-coordinate from contextmenu - not used
+     * @param y Y-coordinate from contextmenu - not used
      */
-    contextmenuOnExportPNG(): void {
+    contextmenuOnExportPNG(x: number, y: number): void {
         const dataURL = this.canvas.toDataURL('image/png', 1.0);
 
         const download = document.createElement('a');
@@ -294,52 +301,70 @@ class Timeline {
 
     /**
      * Callback function from Contextmenu - Displays About information
+     * @param x X-coordinate from contextmenu - not used
+     * @param y Y-coordinate from contextmenu - not used
      */
-    contextmenuOnAbout(): void {
-        const about = new Alert(`
+    contextmenuOnAbout(x: number, y: number): void {
+        const aboutAlert = new Alert(`
             <h3 class="at-m-0">Version ${VERSION}</h3>
-            <p>Developed by Qulle</p>
-            <p><a href="https://github.com/qulle/activity-timeline" target="_blank" class="at-link">github.com/qulle/activity-timeline</a></p>
+            <p>Developed by Qulle <a href="https://github.com/qulle/activity-timeline" target="_blank" class="at-link">github.com/qulle/activity-timeline</a></p>
         `);
     }
 
     /**
      * Callback function from Contextmenu - Zooms in
+     * @param mouseX X-coordinate used to control where to focus the zoom
+     * @param mouseY Y-coordinate used to control where to focus the zoom
      */
-    contextmenuOnZoomIn(): void {
-        this.zoomTimeline(-1);
+    contextmenuOnZoomIn(mouseX: number, mouseY: number): void {
+        this.zoomTimeline(mouseX, mouseY, -1);
     }
 
     /**
      * Callback function from Contextmenu - Zooms out
+     * @param mouseX X-coordinate used to control where to focus the zoom
+     * @param mouseY Y-coordinate used to control where to focus the zoom
      */
-    contextmenuOnZoomOut(): void {
-        this.zoomTimeline(1);
+    contextmenuOnZoomOut(mouseX: number, mouseY: number): void {
+        this.zoomTimeline(mouseX, mouseY, 1);
     }
 
     /**
-     * Zoom in or out
-     * @param deltaY 1 = Zoom out, -1 = Zoom in
+     * Zoom in or out at a given X, Y coordinate
+     * @param deltaY Positive value = Zoom in, Negative value = Zoom out
      */
-    private zoomTimeline(deltaY: number): void {
-        // Adjust the zoom-value based on the deltaY value
-        if(
-            deltaY < 0 && 
-            this.zoom.value * this.zoom.factor < this.zoom.max
-        ) {
-            this.zoom.value *= this.zoom.factor;
-        }else if(
-            deltaY > 0 &&
-            this.zoom.value / this.zoom.factor > this.zoom.min
-        ) {
-            this.zoom.value /= this.zoom.factor;
-        }
+    private zoomTimeline(mouseX: number, mouseY: number, deltaY: number): void {
+        // The sign needs to be flip or the scrolling will be inverted from what user expects
+        const flipSign = -1;
+        const direction = Math.sign(deltaY) * flipSign;
+
+        let referenceZoomPoint: Coordinate = {
+            x: (mouseX + SCROLLABLE_TARGET.scrollLeft) / this.zoom.value, 
+            y: (mouseY + SCROLLABLE_TARGET.scrollTop) / this.zoom.value
+        };
+
+        this.zoom.value += direction * this.zoom.factor * this.zoom.value;
+
+        // Keep the zoom-value in the range min, max given in the zoom object
+        this.zoom.value = Math.max(
+            this.zoom.min, 
+            Math.min(
+                this.zoom.max, 
+                this.zoom.value
+            )
+        );
+        
+        let targetZoomPoint: Coordinate = {
+            x: referenceZoomPoint.x * this.zoom.value - mouseX,
+            y: referenceZoomPoint.y * this.zoom.value - mouseY
+        };
 
         // Render the Timeline with the new zoom
         this.render();
-
-        // TODO: Adjust zoom to mouse location
-        console.log('Parcel rebuild source test');
+        
+        // Scroll target area in to view (where the mouse is placed when zooming)
+        SCROLLABLE_TARGET.scrollLeft = targetZoomPoint.x;
+        SCROLLABLE_TARGET.scrollTop = targetZoomPoint.y;
     }
 
     /**
@@ -366,14 +391,14 @@ class Timeline {
      * Highlight drop area when item is dragged over it
      */
     private highlight(): void {
-        this.canvas.classList.add('at-canvas--highlight');
+        this.canvas.classList.add(DefaultConstants.highlightClass);
     }
 
     /**
      * Remove highlight background when file leaves or is dropped
      */
     private unhighlight(): void {
-        this.canvas.classList.remove('at-canvas--highlight');
+        this.canvas.classList.remove(DefaultConstants.highlightClass);
     }
 
     /**
@@ -406,7 +431,10 @@ class Timeline {
                 // Scroll last day into viewport
                 self.scrollTimeline('end');
             }catch(error: any) {
-                const alert = new Alert('<p>Error parsing the JSON file, check the syntax!</p>');
+                const parseAlert = new Alert(`
+                    <h3 class="at-m-0">Oops!</h3>
+                    <p>Error parsing the JSON file, check the syntax!</p>
+                `);
             }
         }
     }
@@ -427,7 +455,7 @@ class Timeline {
         // window.innerWidth is the minimum width of the canvas
         let width = window.innerWidth;
 
-        const calculatedWidth = DefaultConstants.xPadding + (DefaultConstants.stepDistanceXAxis * DefaultConstants.amplification * this.days.length * this.zoom.value);
+        const calculatedWidth = DefaultConstants.xPadding * (this.zoom.value > 1 ? this.zoom.value : 1) + (DefaultConstants.stepDistanceXAxis * DefaultConstants.amplification * this.days.length * this.zoom.value);
 
         if(calculatedWidth > width) {
             width = calculatedWidth;
@@ -453,7 +481,7 @@ class Timeline {
         });
 
         // Calculate appropriate height
-        const calculatedHeight = DefaultConstants.yPadding + (DefaultConstants.stepDistanceYAxis * maxActivitiesOnYAxis * 2 * this.zoom.value);
+        const calculatedHeight = DefaultConstants.yPadding * (this.zoom.value > 1 ? this.zoom.value : 1) + (DefaultConstants.stepDistanceYAxis * maxActivitiesOnYAxis * 2 * this.zoom.value);
 
         if(calculatedHeight > height) {
             height = calculatedHeight;
@@ -524,7 +552,7 @@ class Timeline {
         // How far the detection will be checked away from the clicked coordinate
         const tolerance = DefaultConstants.radius;
 
-        // TODO: Big O - Time Complexity, make it more efficient using another data structure
+        // Perform collision detection
         for(let a = 0; a < this.days.length; a++) {
             for(let b = 0; b < this.days[a].activities.length; b++) {
                 const activity = this.days[a].activities[b];
@@ -564,6 +592,13 @@ class Timeline {
                 return left.timestamp.getTime() - right.timestamp.getTime();
             });
         });
+
+        if(this.meta.version !== VERSION) {
+            const versionAlert = new Alert(`
+                <h3 class="at-m-0">Possibly version mismatch</h3>
+                <p>Application version <strong>v${VERSION}</strong> and JSON version <strong>v${this.meta.version}</strong></p>
+            `);
+        }
     }
 
     // --------------------------------------------------------------
@@ -782,6 +817,6 @@ class Timeline {
             );
         });
     }
-}
+};
 
 export default Timeline;
