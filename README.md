@@ -2,6 +2,7 @@
 Portable activity Timeline that draws a Timeline based on data given in JSON format. By clicking on any activity a detailed modal window is displayed showing additional information about the activity.
 
 ## Latest build - [Demo](https://qulle.github.io/activity-timeline/)
+All version can be found in the `examples` directory.
 
 ## Screenshots
 The application is not limited to a light and dark theme. Any colors can be used to create custom themes.
