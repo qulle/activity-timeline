@@ -274,8 +274,8 @@ class Timeline {
         const firstFile = <File>files.item(0);
 
         const index     = firstFile.name.lastIndexOf('.');
-        const filename  = firstFile.name.substring(0, index)  || firstFile.name;
-        const extension = firstFile.name.substring(index + 1) || firstFile.name;
+        const filename  = firstFile.name.substring(0, index) || firstFile.name;
+        const extension = firstFile.name.substring(index + 1).toLowerCase() || firstFile.name;
 
         // Store filename, used when exporting the Timeline as PNG
         this.filename = filename;
