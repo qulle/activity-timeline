@@ -1,7 +1,7 @@
 export interface Activity {
+    timestamp: Date,
     title: string,
     description: string,
-    timestamp: Date,
     fillColor: string,
     strokeColor: string,
     x: number,

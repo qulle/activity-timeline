@@ -12,7 +12,10 @@ import { DefaultPosition } from '../defaults/position.default';
 import { DefaultConstants } from '../defaults/constants.default';
 import ContextMenu from './contextmenu/Contextmenu';
 import Modal from './modal/Modal';
-import Alert from './dialog/Alert';
+import Alert from './dialog/Alert'
+
+// Third party CSV parser
+import Papa from 'papaparse';
 
 // Get version information from package.json
 const VERSION = require('/package.json').version;
@@ -36,8 +39,8 @@ class Timeline {
     private filename: string;
 
     // Intermittent event listeners
-    private mouseDragCallback: any;
-    private mouseUpCallback: any;
+    private canvasMouseMoveCallback: any;
+    private canvasMouseUpCallback: any;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -46,31 +49,29 @@ class Timeline {
         this.dragPosition = DefaultPosition;
         this.contextmenu = new ContextMenu(this);
 
-        // Set default language and style, can be overridden from the JSON-files
-        this.meta = DefaultData.meta;
+        // Set default language and style, can be overridden from the JSON/CSV-files
+        this.meta  = DefaultData.meta;
         this.style = DefaultData.style;
 
         // Disable default browser behaviour
-        ['wheel', 'contextmenu'].forEach((eventName: string) => {
+        ['wheel', 'dragenter', 'dragover', 'dragleave', 'drop', 'contextmenu'].forEach((eventName: string) => {
             document.addEventListener(eventName, this.onEventPrevent, { passive: false });
         });
+
+        // Can't disable default keydown completely or F5, F12, Arrow keys etc won't work 
+        document.addEventListener('keydown', this.onKeyDown);
 
         // Re-render canvas if the window is resized
         window.addEventListener('resize', this.onResize.bind(this));
 
         // Application specific listeners
-        this.canvas.addEventListener('drop', this.onDrop.bind(this));
-        this.canvas.addEventListener('click', this.onClick.bind(this));
-        this.canvas.addEventListener('wheel', this.onMouseWheelZoom.bind(this));
-        this.canvas.addEventListener('keydown', this.onKeyDown.bind(this));
-        this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
-        this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
-        this.canvas.addEventListener('contextmenu', this.onContextmenu.bind(this));
-
-        // Prevent default drag behavior
-        ['dragenter', 'dragover', 'dragleave', 'drop', 'contextmenu'].forEach((eventName: string) => {
-            this.canvas.addEventListener(eventName, this.onEventPrevent);
-        });
+        this.canvas.addEventListener('drop', this.onCanvasDrop.bind(this));
+        this.canvas.addEventListener('click', this.onCanvasClick.bind(this));
+        this.canvas.addEventListener('wheel', this.onCanvasWheel.bind(this));
+        this.canvas.addEventListener('keydown', this.onCanvasKeyDown.bind(this));
+        this.canvas.addEventListener('mousemove', this.onCanvasMouseMove.bind(this));
+        this.canvas.addEventListener('mousedown', this.onCanvasMouseDown.bind(this));
+        this.canvas.addEventListener('contextmenu', this.onCanvasContextmenu.bind(this));
 
         // Highlight drop area when item is dragged over it
         ['dragenter', 'dragover'].forEach((eventName: string) => {
@@ -86,6 +87,7 @@ class Timeline {
         this.renderLandingPage();
 
         // Set focus to enable keybord inputs
+        // Note: The HTML Canvas element must have tabindex="0" attribute or focus/keyboard input won't work
         this.canvas.focus();
     }
     
@@ -103,10 +105,25 @@ class Timeline {
     }
 
     /**
+     * KeyDown EventListener - Disable default browser zoom
+     * Can't disable default keydown completely or F5, F12, Arrow keys etc won't work 
+     * @param event 
+     */
+    private onKeyDown(event: KeyboardEvent): void {
+        if((event.ctrlKey || event.metaKey) && (
+            event.key === '+' ||
+            event.key === '-'
+        )) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    }
+
+    /**
      * MouseDown EventListener
      * @param event MouseEvent
      */
-    private onMouseDown(event: MouseEvent): void {
+    private onCanvasMouseDown(event: MouseEvent): void {
         this.dragPosition = {
             left: SCROLLABLE_TARGET.scrollLeft,
             top: SCROLLABLE_TARGET.scrollTop,
@@ -115,21 +132,21 @@ class Timeline {
         };
 
         // Store references to these events to be able to remove them later
-        this.mouseDragCallback = this.onMouseDragHandler.bind(this);
-        this.mouseUpCallback = this.onMouseUpHandler.bind(this);
+        this.canvasMouseMoveCallback = this.onCanvasMouseDrag.bind(this);
+        this.canvasMouseUpCallback = this.onCanvasMouseUp.bind(this);
 
-        this.canvas.addEventListener('mousemove', this.mouseDragCallback);
+        this.canvas.addEventListener('mousemove', this.canvasMouseMoveCallback);
         
         // This listener must be on the document and not the canvas
         // Or it will get stuck if the mouse is moved outside the window/canvas
-        document.addEventListener('mouseup', this.mouseUpCallback);
+        document.addEventListener('mouseup', this.canvasMouseUpCallback);
     }
 
     /**
      * MouseMove EventListener
      * @param event MouseEvent
      */
-    private onMouseDragHandler(event: MouseEvent): void {
+    private onCanvasMouseDrag(event: MouseEvent): void {
         this.canvas.style.cursor = 'grabbing';
         this.isDragging = true;
 
@@ -143,9 +160,10 @@ class Timeline {
 
     /**
      * KeyDown EventListener
+     * Note: The HTML Canvas element must have tabindex="0" attribute or keyboard input won't work
      * @param event KeybordEvent
      */
-    private onKeyDown(event: KeyboardEvent): void {
+    private onCanvasKeyDown(event: KeyboardEvent): void {
         if(!this.hasData()) {
             return;
         }
@@ -165,7 +183,7 @@ class Timeline {
      * MouseMove EventListener
      * @param event MouseEvent
      */
-    private onMouseMove(event: MouseEvent): void {
+    private onCanvasMouseMove(event: MouseEvent): void {
         const activity = this.hitDetection(event.clientX, event.clientY);
         const cursor = activity
             ? 'pointer'
@@ -178,12 +196,12 @@ class Timeline {
      * WheelEvent EventListener - Zooms and re-renders the canvas
      * @param event WheelEvent
      */
-    private onMouseWheelZoom(event: WheelEvent): void {
+    private onCanvasWheel(event: WheelEvent): void {
         // Disable default vertical scroll of canvas
         event.preventDefault();
         event.stopPropagation();
 
-        // Don't zoom the landing page and only zoom if ctrlKey is down
+        // Don't zoom the landing page and only allow zoom if ctrlKey is down
         if(!this.hasData() || !event.ctrlKey) {
             return;
         }
@@ -196,7 +214,7 @@ class Timeline {
      * The coordinates are checked against the plotted activities to display modal window for the correct activity
      * @param event Browser DragEvent
      */
-    private onClick(event: MouseEvent): void {
+    private onCanvasClick(event: MouseEvent): void {
         this.contextmenu.hide();
 
         // Check if the canvas was dragged
@@ -233,12 +251,12 @@ class Timeline {
     /**
      * MouseUp EventListener
      */
-    private onMouseUpHandler(): void {
-        this.canvas.removeEventListener('mousemove', this.mouseDragCallback);
+    private onCanvasMouseUp(): void {
+        this.canvas.removeEventListener('mousemove', this.canvasMouseMoveCallback);
 
         // This listener must be on the document and not the canvas
         // Or it will get stuck if the mouse is moved outside the window/canvas
-        document.removeEventListener('mouseup', this.mouseUpCallback);
+        document.removeEventListener('mouseup', this.canvasMouseUpCallback);
 
         this.canvas.style.cursor = 'default';
     }
@@ -247,15 +265,36 @@ class Timeline {
      * When a file is dropped on the canvas
      * @param event Browser DragEvent
      */
-    private onDrop(event: DragEvent): void{
+    private onCanvasDrop(event: DragEvent): void{
         const dataTransfer = event.dataTransfer;
         const files = dataTransfer!.files;
     
         // Can only parse and display one file at the time
         // Take the first file that was dropped
         const firstFile = <File>files.item(0);
-        this.filename = firstFile.name.substring(0, firstFile.name.lastIndexOf('.')) || firstFile.name;
-        this.parseFile(firstFile);
+
+        const index     = firstFile.name.lastIndexOf('.');
+        const filename  = firstFile.name.substring(0, index)  || firstFile.name;
+        const extension = firstFile.name.substring(index + 1) || firstFile.name;
+
+        // Store filename, used when exporting the Timeline as PNG
+        this.filename = filename;
+
+        const fileParsers = {
+            json: this.parseJSONFile,
+            csv: this.parseCSVFile
+        };
+
+        const parser = fileParsers[extension];
+
+        if(parser) {
+            parser.call(this, firstFile);
+        }else {
+            const fileTypeAlert = new Alert(`
+                <h3 class="at-m-0">Oops!</h3>
+                <p>Can only parse <strong>.json</strong> or <strong>.csv</strong> files</p>
+            `);
+        }
     }
 
     /**
@@ -273,7 +312,7 @@ class Timeline {
      * Contextmenu event to show the custom contextmenu
      * @param event MouseEvent
      */
-    private onContextmenu(event: MouseEvent): void {
+    private onCanvasContextmenu(event: MouseEvent): void {
         if(this.hasData()) {
             this.contextmenu.show(event);
         }
@@ -334,7 +373,7 @@ class Timeline {
      * @param deltaY Positive value = Zoom in, Negative value = Zoom out
      */
     private zoomTimeline(mouseX: number, mouseY: number, deltaY: number): void {
-        // The sign needs to be flip or the scrolling will be inverted from what user expects
+        // The sign needs to be fliped or the scrolling will be inverted from what user expects
         const flipSign = -1;
         const direction = Math.sign(deltaY) * flipSign;
 
@@ -402,10 +441,10 @@ class Timeline {
     }
 
     /**
-     * Parse the given file that was dropped and render the Timeline
+     * Parse the given JSON-file that was dropped and render the Timeline
      * @param file The file that was dropped
      */
-    private parseFile(file: File): void {
+    private parseJSONFile(file: File): void {
         const self = this;
         const reader = new FileReader();
         reader.readAsText(file);
@@ -413,8 +452,9 @@ class Timeline {
             let currentDate: string;
 
             try {
-                // Parse the JSON-file and convert date and timestamps to date objects using the reviever function
-                const data = JSON.parse(<string>reader.result, function(key, value) {
+                // Parse the JSON-file and convert date and timestamps to date objects, easier to work with later
+                const json = <string>reader.result;
+                const parse = JSON.parse(json, function(key, value) {
                     if(key === 'date') {
                         currentDate = value;
                         value = new Date(value);
@@ -422,18 +462,108 @@ class Timeline {
                         value = new Date(currentDate + ' ' + value);
                     }
 
+                    if(typeof value === 'string') {
+                        value.trim();
+                    }
+
                     return value;
                 });
 
+                const data: Data = {
+                    meta:  { ...DefaultData.meta,  ...parse['meta']  || {}},
+                    style: { ...DefaultData.style, ...parse['style'] || {}},
+                    days:  [ ...DefaultData.days,  ...parse['days']  || []]
+                };
+
                 self.setData(data);
                 self.render();
-
-                // Scroll last day into viewport
                 self.scrollTimeline('end');
             }catch(error: any) {
+                console.error(error);
                 const parseAlert = new Alert(`
                     <h3 class="at-m-0">Oops!</h3>
-                    <p>Error parsing the JSON file, check the syntax!</p>
+                    <p>Error parsing the <strong>JSON</strong> file - check the syntax</p>
+                `);
+            }
+        }
+    }
+
+    /**
+     * Parse the given CSV file that was dropped and render the Timeline
+     * @param file The file that was dropped
+     */
+    private parseCSVFile(file: File): void {
+        const self = this;
+        const reader = new FileReader();
+        reader.readAsText(file);
+        reader.onloadend = function() {
+            try {
+                let meta  = {};
+                let style = {};
+
+                const headerNames = ['timestamp', 'title', 'description', 'fillColor', 'strokeColor', ''];
+                const csv = <string>reader.result;
+                const parse = Papa.parse<Activity>(csv, {
+                    header: true,
+                    delimiter: ';',
+                    transformHeader: function(header: string, index: number) {
+                        // Check if there is data in the 5th column, this is meta and/or style in JSON format
+                        if(index === 5) {
+                            const jsonHeader = JSON.parse(header);
+                            meta  = jsonHeader['meta'];
+                            style = jsonHeader['style'];
+                        }
+
+                        // Replace header names from the users file to the correct internal name
+                        // Note: Important that the user provides the columns in the correct order
+                        return headerNames[index];
+                    },
+                    transform: function(value: string, header: string) {
+                        return value.trim();
+                    }
+                });
+
+                // Group the activites by date 
+                const groupedDays = parse.data.reduce((activites: Object, row: Activity) => {
+                    const date = new Date(row.timestamp);
+                    const dateString = date.toLocaleDateString();
+                    
+                    // Update timestamp from string to Date object, easier to work with later
+                    row.timestamp = date;
+
+                    // Create day if not exist
+                    if(!activites[dateString]) {
+                        activites[dateString] = [];
+                    }
+
+                    // Add row/activity to the correct day in the array
+                    activites[dateString].push(row);
+    
+                    return activites;
+                }, {});
+
+                // Re-arrange the structure of the object
+                const days = Object.keys(groupedDays).map((date: string) => {
+                    return {
+                        date: new Date(date),
+                        activities: groupedDays[date]
+                    };
+                });
+
+                const data: Data = {
+                    meta:  { ...DefaultData.meta,  ...meta  || {}},
+                    style: { ...DefaultData.style, ...style || {}},
+                    days:  [ ...DefaultData.days,  ...days  || []]
+                };
+
+                self.setData(data);
+                self.render();
+                self.scrollTimeline('end');
+            }catch(error: any) {
+                console.error(error);
+                const parseAlert = new Alert(`
+                    <h3 class="at-m-0">Oops!</h3>
+                    <p>Error parsing the <strong>CSV</strong> file - check the syntax</p>
                 `);
             }
         }
@@ -455,6 +585,7 @@ class Timeline {
         // window.innerWidth is the minimum width of the canvas
         let width = window.innerWidth;
 
+        // Calculate appropriate width
         const calculatedWidth = DefaultConstants.xPadding * (this.zoom.value > 1 ? this.zoom.value : 1) + (DefaultConstants.stepDistanceXAxis * DefaultConstants.amplification * this.days.length * this.zoom.value);
 
         if(calculatedWidth > width) {
@@ -525,12 +656,21 @@ class Timeline {
     }
 
     /**
-     * Checks direction to render activities on the Y-axis
+     * Checks direction to render activities/labels on the Y-axis
      * @param index Iterator-index from loop
      * @returns True if rendering towards top, False if towards bottom
      */
     private isTop(index: number): boolean {
         return index % 2 === 0;
+    }
+
+    /**
+     * Checks direction to render activities/labels on the Y-axis
+     * @param index Iterator-index from loop
+     * @returns True if rendering towards bottom, False if towards top
+     */
+    private isBottom(index: number): boolean {
+        return !this.isTop(index);
     }
 
     /**
@@ -573,13 +713,14 @@ class Timeline {
     /**
      * Sets the data to be rendered on the Timeline
      * Sorts both days and activites in ascending order
-     * @param data Array of days to be rendered
+     * @param data Meta, Style and Array of days to be rendered
      */
     setData(data: Data): void {
-        // Override default data with data from the JSON-file
-        this.meta = { ...DefaultData.meta, ...data.meta };
-        this.style = { ...DefaultData.style, ...data.style };
-        this.days = [ ...DefaultData.days, ...data.days ];
+        // Note: The data has been merged with the default data and handled in specific ways in the JSON/CSV-parse methods
+        // The data should be 100% valid when it arrives here
+        this.meta  = data.meta;
+        this.style = data.style;
+        this.days  = data.days;
 
         // Sort days in ascending order
         this.days.sort((left, right) => {
@@ -638,7 +779,7 @@ class Timeline {
         const ctx = <CanvasRenderingContext2D>this.canvas.getContext('2d');
 
         // Default canvas size same as window
-        this.canvas.width = window.innerWidth;
+        this.canvas.width  = window.innerWidth;
         this.canvas.height = window.innerHeight;
 
         // Clear the canvas
@@ -710,7 +851,7 @@ class Timeline {
         const ctx = <CanvasRenderingContext2D>this.canvas.getContext('2d');
 
         // Set canvas width and height based no the data
-        this.canvas.width = this.calculateWidth();
+        this.canvas.width  = this.calculateWidth();
         this.canvas.height = this.calculateHeight();
 
         // Clear the canvas
@@ -749,8 +890,8 @@ class Timeline {
                 ? 1 
                 : -1;
 
-            // Adjust for the text height on top positioned text
-            const signAdjustment = !this.isTop(index) 
+            // Adjust for the text height on top position label when rendering activities towards bottom
+            const signAdjustment = this.isBottom(index) 
                 ? this.style.fontSize / 2 
                 : 0;
 
