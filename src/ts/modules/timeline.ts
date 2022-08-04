@@ -10,9 +10,9 @@ import { DefaultData } from '../defaults/data.default';
 import { DefaultZoom } from '../defaults/zoom.default';
 import { DefaultPosition } from '../defaults/position.default';
 import { DefaultConstants } from '../defaults/constants.default';
-import ContextMenu from './contextmenu/Contextmenu';
 import Modal from './modal/Modal';
-import Alert from './dialog/Alert'
+import Alert from './dialog/Alert';
+import Menu from './menu/menu';
 
 // Third party CSV parser
 import Papa from 'papaparse';
@@ -29,7 +29,7 @@ const SCROLLABLE_TARGET = document.documentElement;
 class Timeline {
     // Internal Timeline properties
     private canvas: HTMLCanvasElement;
-    private contextmenu: ContextMenu;
+    private menu: Menu;
     private meta: Meta;
     private style: Style;
     private days: Day[];
@@ -47,7 +47,7 @@ class Timeline {
         this.isDragging = false;
         this.zoom = DefaultZoom;
         this.dragPosition = DefaultPosition;
-        this.contextmenu = new ContextMenu(this);
+        this.menu = new Menu(this);
 
         // Set default language and style, can be overridden from the JSON/CSV-files
         this.meta  = DefaultData.meta;
@@ -71,7 +71,6 @@ class Timeline {
         this.canvas.addEventListener('keydown', this.onCanvasKeyDown.bind(this));
         this.canvas.addEventListener('mousemove', this.onCanvasMouseMove.bind(this));
         this.canvas.addEventListener('mousedown', this.onCanvasMouseDown.bind(this));
-        this.canvas.addEventListener('contextmenu', this.onCanvasContextmenu.bind(this));
 
         // Highlight drop area when item is dragged over it
         ['dragenter', 'dragover'].forEach((eventName: string) => {
@@ -215,8 +214,6 @@ class Timeline {
      * @param event Browser DragEvent
      */
     private onCanvasClick(event: MouseEvent): void {
-        this.contextmenu.hide();
-
         // Check if the canvas was dragged
         // If so reset the bit and exit this event since it was not intended as a click on an activity
         if(this.isDragging) {
@@ -272,29 +269,7 @@ class Timeline {
         // Can only parse and display one file at the time
         // Take the first file that was dropped
         const firstFile = <File>files.item(0);
-
-        const index     = firstFile.name.lastIndexOf('.');
-        const filename  = firstFile.name.substring(0, index) || firstFile.name;
-        const extension = firstFile.name.substring(index + 1).toLowerCase() || firstFile.name;
-
-        // Store filename, used when exporting the Timeline as PNG
-        this.filename = filename;
-
-        const fileParsers = {
-            json: this.parseJSONFile,
-            csv: this.parseCSVFile
-        };
-
-        const parser = fileParsers[extension];
-
-        if(parser) {
-            parser.call(this, firstFile);
-        }else {
-            const fileTypeAlert = new Alert(`
-                <h3 class="at-m-0">Oops!</h3>
-                <p>Can only parse <strong>.json</strong> or <strong>.csv</strong> files</p>
-            `);
-        }
+        this.handleFileBeforeParse(firstFile);
     }
 
     /**
@@ -308,29 +283,36 @@ class Timeline {
         }
     }
 
+    // --------------------------------------------------------------
+    // Menu callback methods
+    // --------------------------------------------------------------
+
     /**
-     * Contextmenu event to show the custom contextmenu
-     * @param event MouseEvent
+     * Callback function from Menu - Pans to the start (left) of the Timeline
      */
-    private onCanvasContextmenu(event: MouseEvent): void {
-        if(this.hasData()) {
-            this.contextmenu.show(event);
-        }
+    menuOnPanStart(): void {
+        this.scrollTimeline('start');
     }
 
-    // --------------------------------------------------------------
-    // Logical methods
-    // --------------------------------------------------------------
+    /**
+     * Callback function from Menu - Pans to the end (right) of the Timeline
+     */
+    menuOnPanEnd(): void {
+        this.scrollTimeline('end');
+    }
 
     /**
-     * Callback function from Contextmenu - Exports Timeline as PNG
-     * @param x X-coordinate from contextmenu - not used
-     * @param y Y-coordinate from contextmenu - not used
+     * Callback function from Menu - Exports Timeline as PNG
      */
-    contextmenuOnExportPNG(x: number, y: number): void {
+    menuOnExportPNG(): void {
+        if(!this.hasData()) {
+            return;
+        }
+
         const dataURL = this.canvas.toDataURL('image/png', 1.0);
 
         const download = document.createElement('a');
+        download.className = 'at-d-none';
         download.href = dataURL;
         download.download = this.filename + '.png';
         document.body.appendChild(download);
@@ -339,11 +321,9 @@ class Timeline {
     }
 
     /**
-     * Callback function from Contextmenu - Displays About information
-     * @param x X-coordinate from contextmenu - not used
-     * @param y Y-coordinate from contextmenu - not used
+     * Callback function from Menu - Displays About information
      */
-    contextmenuOnAbout(x: number, y: number): void {
+    menuOnAbout(): void {
         const aboutAlert = new Alert(`
             <h3 class="at-m-0">Version ${VERSION}</h3>
             <p>Developed by Qulle <a href="https://github.com/qulle/activity-timeline" target="_blank" class="at-link">github.com/qulle/activity-timeline</a></p>
@@ -351,21 +331,82 @@ class Timeline {
     }
 
     /**
-     * Callback function from Contextmenu - Zooms in
-     * @param mouseX X-coordinate used to control where to focus the zoom
-     * @param mouseY Y-coordinate used to control where to focus the zoom
+     * Callback function from Menu - Resets Zoom to default value
      */
-    contextmenuOnZoomIn(mouseX: number, mouseY: number): void {
-        this.zoomTimeline(mouseX, mouseY, -1);
+    menuOnZoomReset(): void {
+        if(!this.hasData()) {
+            return;
+        }
+
+        this.resetZoom();
     }
 
     /**
-     * Callback function from Contextmenu - Zooms out
-     * @param mouseX X-coordinate used to control where to focus the zoom
-     * @param mouseY Y-coordinate used to control where to focus the zoom
+     * Callback function from Menu - Zooms in or out based on delta value
+     * @param deltaY Positive value = Zoom in, Negative value = Zoom out
      */
-    contextmenuOnZoomOut(mouseX: number, mouseY: number): void {
-        this.zoomTimeline(mouseX, mouseY, 1);
+    menuOnZoomDelta(deltaY: number): void {
+        if(!this.hasData()) {
+            return;
+        }
+
+        // Zoom using center of window as reference point
+        const centerX = window.innerWidth  / 2;
+        const centerY = window.innerHeight / 2;
+        this.zoomTimeline(centerX, centerY, deltaY);
+    }
+
+    /**
+     * Callback function from Menu - Import file to render
+     */
+    menuOnDataImport(): void {
+        const fileDialog = document.createElement('input');
+        fileDialog.className = 'at-d-none';
+        fileDialog.setAttribute('type', 'file');
+        fileDialog.setAttribute('accept', '.json, .csv');
+        fileDialog.addEventListener('change', (event: Event) => {
+            const fileDialog = <HTMLInputElement>event.target;
+            const firstFile = fileDialog.files![0];
+            this.handleFileBeforeParse(firstFile);
+            document.body.removeChild(fileDialog);
+        });
+        document.body.appendChild(fileDialog);
+
+        // Open the dialog
+        fileDialog.click();
+    }
+
+    // --------------------------------------------------------------
+    // Logical methods
+    // --------------------------------------------------------------
+
+    /**
+     * Handles preparation and verifying file extension before parsing the file
+     * @param file File to be parsed
+     */
+    private handleFileBeforeParse(file: File): void {
+        const index     = file.name.lastIndexOf('.');
+        const filename  = file.name.substring(0, index) || file.name;
+        const extension = file.name.substring(index + 1).toLowerCase() || file.name;
+
+        // Store filename, used when exporting the Timeline as PNG
+        this.filename = filename;
+
+        const fileParsers = {
+            json: this.parseJSONFile,
+            csv: this.parseCSVFile
+        };
+
+        const parser = fileParsers[extension];
+
+        if(parser) {
+            parser.call(this, file);
+        }else {
+            const fileTypeAlert = new Alert(`
+                <h3 class="at-m-0">Oops!</h3>
+                <p>Can only parse <strong>.json</strong> or <strong>.csv</strong> files</p>
+            `);
+        }
     }
 
     /**
@@ -817,7 +858,7 @@ class Timeline {
         const dropIconSVGPath = new Path2D('M37.5 21.875C37.5 19.3886 38.4877 17.004 40.2459 15.2459C42.004 13.4877 44.3886 12.5 46.875 12.5H53.125C55.6114 12.5 57.996 13.4877 59.7541 15.2459C61.5123 17.004 62.5 19.3886 62.5 21.875V28.125C62.5 30.6114 61.5123 32.996 59.7541 34.7541C57.996 36.5123 55.6114 37.5 53.125 37.5V43.75H87.5C88.3288 43.75 89.1237 44.0792 89.7097 44.6653C90.2958 45.2513 90.625 46.0462 90.625 46.875V53.125C90.625 53.9538 90.2958 54.7487 89.7097 55.3347C89.1237 55.9208 88.3288 56.25 87.5 56.25C86.6712 56.25 85.8763 55.9208 85.2903 55.3347C84.7042 54.7487 84.375 53.9538 84.375 53.125V50H53.125V53.125C53.125 53.9538 52.7958 54.7487 52.2097 55.3347C51.6237 55.9208 50.8288 56.25 50 56.25C49.1712 56.25 48.3763 55.9208 47.7903 55.3347C47.2042 54.7487 46.875 53.9538 46.875 53.125V50H15.625V53.125C15.625 53.9538 15.2958 54.7487 14.7097 55.3347C14.1237 55.9208 13.3288 56.25 12.5 56.25C11.6712 56.25 10.8763 55.9208 10.2903 55.3347C9.70424 54.7487 9.375 53.9538 9.375 53.125V46.875C9.375 46.0462 9.70424 45.2513 10.2903 44.6653C10.8763 44.0792 11.6712 43.75 12.5 43.75H46.875V37.5C44.3886 37.5 42.004 36.5123 40.2459 34.7541C38.4877 32.996 37.5 30.6114 37.5 28.125V21.875ZM0 71.875C0 69.3886 0.98772 67.004 2.74587 65.2459C4.50403 63.4877 6.8886 62.5 9.375 62.5H15.625C18.1114 62.5 20.496 63.4877 22.2541 65.2459C24.0123 67.004 25 69.3886 25 71.875V78.125C25 80.6114 24.0123 82.996 22.2541 84.7541C20.496 86.5123 18.1114 87.5 15.625 87.5H9.375C6.8886 87.5 4.50403 86.5123 2.74587 84.7541C0.98772 82.996 0 80.6114 0 78.125L0 71.875ZM37.5 71.875C37.5 69.3886 38.4877 67.004 40.2459 65.2459C42.004 63.4877 44.3886 62.5 46.875 62.5H53.125C55.6114 62.5 57.996 63.4877 59.7541 65.2459C61.5123 67.004 62.5 69.3886 62.5 71.875V78.125C62.5 80.6114 61.5123 82.996 59.7541 84.7541C57.996 86.5123 55.6114 87.5 53.125 87.5H46.875C44.3886 87.5 42.004 86.5123 40.2459 84.7541C38.4877 82.996 37.5 80.6114 37.5 78.125V71.875ZM75 71.875C75 69.3886 75.9877 67.004 77.7459 65.2459C79.504 63.4877 81.8886 62.5 84.375 62.5H90.625C93.1114 62.5 95.496 63.4877 97.2541 65.2459C99.0123 67.004 100 69.3886 100 71.875V78.125C100 80.6114 99.0123 82.996 97.2541 84.7541C95.496 86.5123 93.1114 87.5 90.625 87.5H84.375C81.8886 87.5 79.504 86.5123 77.7459 84.7541C75.9877 82.996 75 80.6114 75 78.125V71.875Z');
 
         // Render drop text
-        const dropLabel = 'DROP TIMELINE JSON { }';
+        const dropLabel = 'DROP TIMELINE DATA FILE';
         ctx.font = `italic bold 20px Arial`;
         ctx.fillStyle = this.style.textColor;
         ctx.fillText(

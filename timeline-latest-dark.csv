@@ -1,4 +1,4 @@
-Timestamp;Title;Description;Fill Color;Stroke Color;{"meta":{"version":"1.1.0","locale":"en-us"},"style":{"textColor":"#D3D9E6","timelineStrokeColor":"#D3D9E6","strokeColor":"#353C4B","backgroundColor":"#3B4352"}}
+Timestamp;Title;Description;Fill Color;Stroke Color;{"meta":{"version":"1.2.0","locale":"en-us"},"style":{"textColor":"#D3D9E6","timelineStrokeColor":"#D3D9E6","strokeColor":"#353C4B","backgroundColor":"#3B4352"}}
 2022-07-08 12:23;Patched webserver;Some additional information about the activity;#D0CEE2;#56517E
 2022-07-08 13:55;Restarted sql cluster;Some additional information about the activity;#FAD7AC;#C27B25
 2022-07-08 18:36;Restarted application pool;Some additional information about the activity;#FAD7AC;#C27B25

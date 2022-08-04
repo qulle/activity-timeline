@@ -1,0 +1,30 @@
+.at-menu {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    padding: 4px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    max-width: calc(100% - 2rem);
+    overflow: auto;
+
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    &__item {
+        margin-left: .5rem;
+
+        &:first-child{
+            margin: 0;
+        }
+    }
+
+    &__icon {
+        filter: $drop-shadow-filter-light;
+    }
+}

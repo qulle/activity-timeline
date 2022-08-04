@@ -29,6 +29,10 @@ p {
     margin: 0;
 }
 
+.at-d-none {
+    display: none !important;
+}
+
 .at-link {
     color: $color-blue-mid;
     text-decoration: none;

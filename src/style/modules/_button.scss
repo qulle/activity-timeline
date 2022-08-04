@@ -34,6 +34,10 @@
         touch-action: manipulation;
     }
 
+    &--round {
+        border-radius: 50%;
+    }
+
     &--blank {
         box-shadow: none;
         padding: 0;
