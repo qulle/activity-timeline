@@ -17,6 +17,11 @@ class Menu {
 
         [
             {
+                title: 'Current Timeline',
+                callback: this.timeline.menuOnInfo.bind(this.timeline),
+                svg: SVGPaths.Info
+            },
+            {
                 title: 'Pan Start',
                 callback: this.timeline.menuOnPanStart.bind(this.timeline),
                 svg: SVGPaths.PanStart

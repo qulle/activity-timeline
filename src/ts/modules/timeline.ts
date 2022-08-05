@@ -332,6 +332,47 @@ class Timeline {
     }
 
     /**
+     * Callback function from Menu - Displays Info about the current Timeline
+     */
+    menuOnInfo(): void {
+        if(!this.hasData()) {
+            return;
+        }
+
+        let maxActivities = 0;
+        let minActivities = Number.MAX_VALUE;
+
+        this.days.forEach(day => {
+            const dayLenght = day.activities.length;
+
+            if(dayLenght > maxActivities) {
+                maxActivities = dayLenght;
+            }
+
+            if(dayLenght < minActivities) {
+                minActivities = dayLenght;
+            }
+        });
+
+        const startDate = this.days[0].date;
+        const endDate   = this.days[this.days.length - 1].date;
+
+        const dateDiff   = endDate.getTime() - startDate.getTime();
+        const timePeriod = Math.ceil(dateDiff / (1000 * 3600 * 24));
+
+        const content = `
+            <p>First date: <strong>${startDate.toLocaleDateString(this.meta.locale)}</strong></p>
+            <p>Last date: <strong>${endDate.toLocaleDateString(this.meta.locale)}</strong></p>
+            <p>Time period: <strong>${timePeriod} days</strong></p>
+            <p>Activities on: <strong>${this.days.length} days</strong> corresponding to <strong>${(this.days.length / timePeriod) * 100}%</strong> of time period</p>
+            <p>Most activites in a day: <strong>${maxActivities} st</strong></p>
+            <p>Less activites in a day: <strong>${minActivities} st</strong></p>
+        `;
+
+        const modal = new Modal('Current Timeline', content);
+    }
+
+    /**
      * Callback function from Menu - Resets Zoom to default value
      */
     menuOnZoomReset(): void {

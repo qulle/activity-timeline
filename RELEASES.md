@@ -6,6 +6,8 @@ TBA
 Some of the changes done in this version is:
 
 - Removed contextmenu and replaced with menu in top right corner
+- Added menu button to display info about the current Timeline
+- Fixed focus bug in modal window
 
 ## 1.1.0
 2022-08-03

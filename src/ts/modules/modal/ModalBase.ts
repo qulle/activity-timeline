@@ -10,7 +10,7 @@ class ModalBase {
     constructor(title: string) {
         const modalBackdrop = document.createElement('div');
         modalBackdrop.className = 'at-modal-backdrop at-modal-backdrop--fixed';
-        modalBackdrop.setAttribute('tabindex', '1');
+        modalBackdrop.setAttribute('tabindex', '-1');
         modalBackdrop.addEventListener('keydown', trapFocusKeyListener);
         modalBackdrop.addEventListener('click', this.bounceAnimation.bind(this));
 
@@ -66,10 +66,10 @@ class ModalBase {
         this.modal.classList.add(ANIMATION_CLASS);
     }
 
-    show(modalContent: any): void {
+    show(modalContent: HTMLDivElement): void {
         this.modal.appendChild(modalContent);
         document.body.appendChild(this.modalBackdrop);
-        this.modal.focus();
+        this.modalBackdrop.focus();
     }
 
     close(): void {
