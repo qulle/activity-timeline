@@ -172,7 +172,8 @@ class Timeline {
         const commands = {
             s: this.scrollTimeline.bind(this, 'start'),
             e: this.scrollTimeline.bind(this, 'end'),
-            z: this.resetZoom.bind(this)
+            z: this.resetZoom.bind(this),
+            m: this.menu.toggleMenuStrip.bind(this.menu)
         };
 
         commands[key]?.call();
