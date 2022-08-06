@@ -38,12 +38,12 @@ class Menu {
             },
             {
                 title: 'Zoom Out',
-                callback: this.timeline.menuOnZoomDelta.bind(this.timeline, 1),
+                callback: this.timeline.menuOnZoomDelta.bind(this.timeline, -1),
                 svg: SVGPaths.ZoomOut
             },
             {
                 title: 'Zoom In',
-                callback: this.timeline.menuOnZoomDelta.bind(this.timeline, -1),
+                callback: this.timeline.menuOnZoomDelta.bind(this.timeline, 1),
                 svg: SVGPaths.ZoomIn
             },
             {

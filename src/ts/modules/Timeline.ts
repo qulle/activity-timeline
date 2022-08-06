@@ -23,6 +23,9 @@ const VERSION = require('/package.json').version;
 // Reference to target element used when panning the canvas
 const SCROLLABLE_TARGET = document.documentElement;
 
+// Canvas needs to factor in the device resolution in order to look sharp on high-res retina screens/mobile devices etc.
+const DEVICE_PIXEL_RATIO = window.devicePixelRatio || 1;
+
 /**
  * Class to render Timeline on a HTMLCanvasElement
  */
@@ -37,6 +40,7 @@ class Timeline {
     private isDragging: boolean;
     private dragPosition: Position;
     private filename: string;
+    private fileExtension: string;
 
     // Intermittent event listeners
     private canvasMouseMoveCallback: any;
@@ -106,7 +110,7 @@ class Timeline {
     /**
      * KeyDown EventListener - Disable default browser zoom
      * Can't disable default keydown completely or F5, F12, Arrow keys etc won't work 
-     * @param event 
+     * @param event KeybordEvent
      */
     private onKeyDown(event: KeyboardEvent): void {
         if((event.ctrlKey || event.metaKey) && (
@@ -163,11 +167,14 @@ class Timeline {
      * @param event KeybordEvent
      */
     private onCanvasKeyDown(event: KeyboardEvent): void {
-        if(!this.hasData()) {
+        const key = event.key.toLowerCase();
+
+        // Don't trigger shortcut if no data or more complex predefined shortcut by browser
+        if((!this.hasData() && key !== 'm') ||
+            event.ctrlKey || event.shiftKey
+        ) {
             return;
         }
-
-        const key = event.key.toLowerCase();
 
         const commands = {
             s: this.scrollTimeline.bind(this, 'start'),
@@ -206,7 +213,10 @@ class Timeline {
             return;
         }
 
-        this.zoomTimeline(event.clientX, event.clientY, event.deltaY);
+        // The sign needs to be fliped or the scrolling will be inverted from what user expects
+        const flipSign = -1;
+        const deltaY = event.deltaY * flipSign;
+        this.zoomTimeline(event.clientX, event.clientY, deltaY);
     }
 
     /**
@@ -361,12 +371,13 @@ class Timeline {
         const timePeriod = Math.ceil(dateDiff / (1000 * 3600 * 24));
 
         const content = `
+            <p>File: <strong>${this.filename}.${this.fileExtension}</strong></p>
             <p>First date: <strong>${startDate.toLocaleDateString(this.meta.locale)}</strong></p>
             <p>Last date: <strong>${endDate.toLocaleDateString(this.meta.locale)}</strong></p>
             <p>Time period: <strong>${timePeriod} days</strong></p>
             <p>Activities on: <strong>${this.days.length} days</strong> corresponding to <strong>${(this.days.length / timePeriod) * 100}%</strong> of time period</p>
             <p>Most activites in a day: <strong>${maxActivities} st</strong></p>
-            <p>Less activites in a day: <strong>${minActivities} st</strong></p>
+            <p>Least activites in a day: <strong>${minActivities} st</strong></p>
         `;
 
         const modal = new Modal('Current Timeline', content);
@@ -432,6 +443,7 @@ class Timeline {
         const extension = file.name.substring(index + 1).toLowerCase() || file.name;
 
         // Store filename, used when exporting the Timeline as PNG
+        this.fileExtension = extension;
         this.filename = filename;
 
         const fileParsers = {
@@ -456,13 +468,11 @@ class Timeline {
      * @param deltaY Positive value = Zoom in, Negative value = Zoom out
      */
     private zoomTimeline(mouseX: number, mouseY: number, deltaY: number): void {
-        // The sign needs to be fliped or the scrolling will be inverted from what user expects
-        const flipSign = -1;
-        const direction = Math.sign(deltaY) * flipSign;
+        const direction = Math.sign(deltaY);
 
         let referenceZoomPoint: Coordinate = {
             x: (mouseX + SCROLLABLE_TARGET.scrollLeft) / this.zoom.value, 
-            y: (mouseY + SCROLLABLE_TARGET.scrollTop) / this.zoom.value
+            y: (mouseY + SCROLLABLE_TARGET.scrollTop)  / this.zoom.value
         };
 
         this.zoom.value += direction * this.zoom.factor * this.zoom.value;
@@ -609,7 +619,7 @@ class Timeline {
                 // Group the activites by date 
                 const groupedDays = parse.data.reduce((activites: Object, row: Activity) => {
                     const date = new Date(row.timestamp);
-                    const dateString = date.toLocaleDateString();
+                    const dateString = date.toDateString();
                     
                     // Update timestamp from string to Date object, easier to work with later
                     row.timestamp = date;
@@ -664,12 +674,12 @@ class Timeline {
      * Calculates the width of the canvas base on the data to be rendered
      * @returns Width of the canvas, minimum width is the window.innerWidth
      */
-    private calculateWidth(): number {
+    private calculateWidth(pixelRatio: number): number {
         // window.innerWidth is the minimum width of the canvas
-        let width = window.innerWidth;
+        let width = window.innerWidth * pixelRatio;
 
         // Calculate appropriate width
-        const calculatedWidth = DefaultConstants.xPadding * (this.zoom.value > 1 ? this.zoom.value : 1) + (DefaultConstants.stepDistanceXAxis * DefaultConstants.amplification * this.days.length * this.zoom.value);
+        const calculatedWidth = DefaultConstants.xPadding * ((this.zoom.value > 1 ? this.zoom.value : 1) * pixelRatio) + (DefaultConstants.stepDistanceXAxis * this.days.length * this.zoom.value * pixelRatio);
 
         if(calculatedWidth > width) {
             width = calculatedWidth;
@@ -682,9 +692,9 @@ class Timeline {
      * Calculates the height of the canvas base on the data to be rendered
      * @returns Height of the canvas, minimum height is the window.innerHeight
      */
-    private calculateHeight(): number {
+    private calculateHeight(pixelRatio: number): number {
         // window.innerHeight is the minimum height of the canvas
-        let height = window.innerHeight;
+        let height = window.innerHeight * pixelRatio;
         let maxActivitiesOnYAxis = 0;
 
         // Find the day with most activites to be rendered on the Y-axis
@@ -695,7 +705,7 @@ class Timeline {
         });
 
         // Calculate appropriate height
-        const calculatedHeight = DefaultConstants.yPadding * (this.zoom.value > 1 ? this.zoom.value : 1) + (DefaultConstants.stepDistanceYAxis * maxActivitiesOnYAxis * 2 * this.zoom.value);
+        const calculatedHeight = DefaultConstants.yPadding * ((this.zoom.value > 1 ? this.zoom.value : 1) * pixelRatio) + (DefaultConstants.stepDistanceYAxis * maxActivitiesOnYAxis * 2 * this.zoom.value * pixelRatio);
 
         if(calculatedHeight > height) {
             height = calculatedHeight;
@@ -709,7 +719,7 @@ class Timeline {
      * @returns Y-coordinate for where to render the X-axis
      */
     private getVerticalMid(): number {
-        return (this.canvas.height / 2 - this.style.lineThickness / 2) / this.zoom.value;
+        return (this.canvas.height / 2 - this.style.lineThickness / 2) / (this.zoom.value * DEVICE_PIXEL_RATIO);
     }
 
     /**
@@ -757,7 +767,7 @@ class Timeline {
     }
 
     /**
-     * Get the Activity that corresponds to the clicked location in the canvas
+     * Get the Activity that corresponds to the clicked/hovered location in the canvas
      * @param x X-coordinate
      * @param y Y-coordinate
      * @returns The clicked Activity, undefined if no activity is found
@@ -769,11 +779,11 @@ class Timeline {
 
         // The coordinates must be translated to accommodate for scrolling in the canvas
         const rect = this.canvas.getBoundingClientRect();
-        const relX = (x - rect.left) / this.zoom.value;
-        const relY = (y - rect.top) / this.zoom.value;
+        const relX = (x - (rect.left)) / (this.zoom.value * DEVICE_PIXEL_RATIO);
+        const relY = (y - (rect.top))  / (this.zoom.value * DEVICE_PIXEL_RATIO);
 
         // How far the detection will be checked away from the clicked coordinate
-        const tolerance = DefaultConstants.radius;
+        const tolerance = DefaultConstants.radius / DEVICE_PIXEL_RATIO;
 
         // Perform collision detection
         for(let a = 0; a < this.days.length; a++) {
@@ -861,12 +871,20 @@ class Timeline {
         // Context to render elements on
         const ctx = <CanvasRenderingContext2D>this.canvas.getContext('2d');
 
-        // Default canvas size same as window
-        this.canvas.width  = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        // Set canvas width and height based no the window and the devicePixelRatio
+        this.canvas.width  = window.innerWidth * DEVICE_PIXEL_RATIO;
+        this.canvas.height = window.innerHeight * DEVICE_PIXEL_RATIO;
 
         // Clear the canvas
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Note: This will affect all things that are drawn. 
+        // In some places values must be corrected by multiplying or dividing with the zoom.value
+        ctx.scale(this.zoom.value * DEVICE_PIXEL_RATIO, this.zoom.value * DEVICE_PIXEL_RATIO);
+
+        // Set the canvas element width and height to shrink the canvas on devices that have ratio > 1
+        this.canvas.style.width  = window.innerWidth  + 'px';
+        this.canvas.style.height = window.innerHeight + 'px';
 
         // Calculate appropriate dimensions for the drop square
         const dropSquareWidth = window.innerWidth < DefaultConstants.ladingPageWidth + DefaultConstants.canvasInternalPadding 
@@ -883,13 +901,13 @@ class Timeline {
         ctx.strokeStyle = this.style.strokeColor;
         ctx.setLineDash([6]);
         ctx.fillRect(
-            window.innerWidth / 2 - dropSquareWidth / 2,
+            window.innerWidth  / 2 - dropSquareWidth  / 2,
             window.innerHeight / 2 - dropSquareHeight / 1.8,
             dropSquareWidth,
             dropSquareHeight
         );
         ctx.strokeRect(
-            window.innerWidth / 2 - dropSquareWidth / 2,
+            window.innerWidth  / 2 - dropSquareWidth  / 2,
             window.innerHeight / 2 - dropSquareHeight / 1.8,
             dropSquareWidth, 
             dropSquareHeight
@@ -933,9 +951,9 @@ class Timeline {
         // Context to render elements on
         const ctx = <CanvasRenderingContext2D>this.canvas.getContext('2d');
 
-        // Set canvas width and height based no the data
-        this.canvas.width  = this.calculateWidth();
-        this.canvas.height = this.calculateHeight();
+        // Set canvas width and height based no the data and the devicePixelRatio
+        this.canvas.width  = this.calculateWidth(DEVICE_PIXEL_RATIO);
+        this.canvas.height = this.calculateHeight(DEVICE_PIXEL_RATIO);
 
         // Clear the canvas
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -946,7 +964,11 @@ class Timeline {
 
         // Note: This will affect all things that are drawn. 
         // In some places values must be corrected by multiplying or dividing with the zoom.value
-        ctx.scale(this.zoom.value, this.zoom.value);
+        ctx.scale(this.zoom.value * DEVICE_PIXEL_RATIO, this.zoom.value * DEVICE_PIXEL_RATIO);
+
+        // Set the canvas element width and height to shrink the canvas on devices that have ratio > 1
+        this.canvas.style.width = this.calculateWidth(1) + 'px' // this.canvas.width + 'px';;
+        this.canvas.style.height = this.calculateHeight(1) + 'px'; // this.canvas.height + 'px';
 
         // Get the mid of the canvas, must come after the calculate width/height
         const mid = this.getVerticalMid();
@@ -960,12 +982,12 @@ class Timeline {
         // Render main Timeline
         ctx.beginPath();
         ctx.moveTo(DefaultConstants.canvasInternalPadding, mid);
-        ctx.lineTo(this.canvas.width / this.zoom.value - DefaultConstants.canvasInternalPadding, mid);
+        ctx.lineTo((this.canvas.width / (this.zoom.value * DEVICE_PIXEL_RATIO)) - DefaultConstants.canvasInternalPadding, mid);
         ctx.stroke();
 
         // Render each day on Timeline
         this.days.forEach((day, index) => {
-            const x = DefaultConstants.xPadding + (DefaultConstants.stepDistanceXAxis * DefaultConstants.amplification * index);
+            const x = DefaultConstants.xPadding + (DefaultConstants.stepDistanceXAxis * index);
             const y = mid;
 
             // If placement is top or bottom direction on the Y-axis
@@ -1002,8 +1024,8 @@ class Timeline {
                 );
 
                 // Store coordinates where the activity was rendered, this will be used in the click-event
-                activity.x = posX;
-                activity.y = posY;
+                activity.x = posX / DEVICE_PIXEL_RATIO
+                activity.y = posY / DEVICE_PIXEL_RATIO;
 
                 // Render activity-label
                 ctx.fillStyle = this.style.textColor;

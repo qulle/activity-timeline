@@ -6,8 +6,10 @@ TBA
 Some of the changes done in this version is:
 
 - Removed contextmenu and replaced with menu in top right corner
-- Added menu button to display info about the current Timeline
+- Added support for mobile devices 
+- Added devicePixelRatio support to look sharp on high-resolution screens
 - Fixed focus bug in modal window
+- Fixed date bug when parsing CSV-files
 
 ## 1.1.0
 2022-08-03
