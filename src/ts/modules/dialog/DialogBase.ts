@@ -15,7 +15,7 @@ class DialogBase {
         this.dialogBackdrop = dialogBackdrop;
 
         window.addEventListener('keyup', (event) => {
-            if(event.key === 'Escape') {
+            if(event.key.toLowerCase() === 'escape') {
                 this.close();
             }
         });

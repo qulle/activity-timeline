@@ -46,7 +46,7 @@ class ModalBase {
         this.modal = modal;
 
         window.addEventListener('keyup', (event) => {
-            if(event.key === 'Escape') {
+            if(event.key.toLowerCase() === 'escape') {
                 this.close();
             }
         });

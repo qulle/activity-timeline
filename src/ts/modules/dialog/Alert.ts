@@ -9,6 +9,9 @@ class Alert extends DialogBase {
 
         dialog.innerHTML = content;
 
+        const alertButtons = document.createElement('div');
+        alertButtons.className = 'at-dialog__button-wrapper';
+
         const okButton = document.createElement('button');
         okButton.setAttribute('type', 'button');
         okButton.className = 'at-dialog__btn at-btn at-btn--blue-mid';
@@ -17,7 +20,8 @@ class Alert extends DialogBase {
             this.close();
         });
 
-        dialog.appendChild(okButton);
+        alertButtons.appendChild(okButton);
+        dialog.appendChild(alertButtons);
 
         this.dialogBackdrop.appendChild(dialog);
         document.body.appendChild(this.dialogBackdrop);

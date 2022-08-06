@@ -114,9 +114,10 @@ class Timeline {
      * @param event KeybordEvent
      */
     private onKeyDown(event: KeyboardEvent): void {
+        const key = event.key.toLowerCase();
         if((event.ctrlKey || event.metaKey) && (
-            event.key === '+' ||
-            event.key === '-'
+            key === '+' ||
+            key === '-'
         )) {
             event.preventDefault();
             event.stopPropagation();
