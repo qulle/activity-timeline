@@ -10,6 +10,7 @@ import { DefaultData } from '../defaults/data.default';
 import { DefaultZoom } from '../defaults/zoom.default';
 import { DefaultPosition } from '../defaults/position.default';
 import { DefaultConstants } from '../defaults/constants.default';
+import { ScrollPosition } from '../types/scroll-position.type';
 import Modal from './modal/Modal';
 import Alert from './dialog/Alert';
 import Menu from './menu/menu';
@@ -158,7 +159,7 @@ class Timeline {
         const dy = event.clientY - this.dragPosition.y;
         
         SCROLLABLE_TARGET.scrollLeft = this.dragPosition.left - dx;
-        SCROLLABLE_TARGET.scrollTop = this.dragPosition.top - dy;
+        SCROLLABLE_TARGET.scrollTop  = this.dragPosition.top  - dy;
     }
 
     /**
@@ -177,8 +178,9 @@ class Timeline {
         }
 
         const commands = {
-            s: this.scrollTimeline.bind(this, 'start'),
-            e: this.scrollTimeline.bind(this, 'end'),
+            s: this.scrollTimeline.bind(this, ScrollPosition.Start),
+            e: this.scrollTimeline.bind(this, ScrollPosition.End),
+            c: this.scrollTimeline.bind(this, ScrollPosition.Center),
             z: this.resetZoom.bind(this),
             m: this.menu.toggleMenuStrip.bind(this.menu)
         };
@@ -301,15 +303,22 @@ class Timeline {
     /**
      * Callback function from Menu - Pans to the start (left) of the Timeline
      */
-    menuOnPanStart(): void {
-        this.scrollTimeline('start');
+    menuOnAlignStart(): void {
+        this.scrollTimeline(ScrollPosition.Start);
     }
 
     /**
      * Callback function from Menu - Pans to the end (right) of the Timeline
      */
-    menuOnPanEnd(): void {
-        this.scrollTimeline('end');
+    menuOnAlignEnd(): void {
+        this.scrollTimeline(ScrollPosition.End);
+    }
+
+    /**
+     * Callback function from Menu - Pans to the center of the Timeline
+     */
+    menuOnAlignCenter(): void {
+        this.scrollTimeline(ScrollPosition.Center);
     }
 
     /**
@@ -351,6 +360,7 @@ class Timeline {
 
         let maxActivities = 0;
         let minActivities = Number.MAX_VALUE;
+        let totActivities = 0;
 
         this.days.forEach(day => {
             const dayLenght = day.activities.length;
@@ -362,6 +372,8 @@ class Timeline {
             if(dayLenght < minActivities) {
                 minActivities = dayLenght;
             }
+
+            totActivities += dayLenght;
         });
 
         const startDate = this.days[0].date;
@@ -376,8 +388,10 @@ class Timeline {
             <p>Last date: <strong>${endDate.toLocaleDateString(this.meta.locale)}</strong></p>
             <p>Time period: <strong>${timePeriod} days</strong></p>
             <p>Activities on: <strong>${this.days.length} days</strong> corresponding to <strong>${(this.days.length / timePeriod) * 100}%</strong> of time period</p>
+            <p>Total activites: <strong>${totActivities} st</strong></p>
             <p>Most activites in a day: <strong>${maxActivities} st</strong></p>
             <p>Least activites in a day: <strong>${minActivities} st</strong></p>
+            <p>Avarage activites in a day: <strong>${totActivities / this.days.length} st</strong></p>
         `;
 
         const modal = new Modal('Current Timeline', content);
@@ -496,18 +510,41 @@ class Timeline {
         
         // Scroll target area in to view (where the mouse is placed when zooming)
         SCROLLABLE_TARGET.scrollLeft = targetZoomPoint.x;
-        SCROLLABLE_TARGET.scrollTop = targetZoomPoint.y;
+        SCROLLABLE_TARGET.scrollTop  = targetZoomPoint.y;
     }
 
     /**
      * Scroll Timeline to vertical center and horizontal discrete location
-     * @param inline 'center' | 'end' | 'nearest' | 'start'
+     * @param position 'start' | 'end' | 'center'
      */
-    private scrollTimeline(inline: ScrollLogicalPosition): void {
-        this.canvas.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-            inline: inline
+    private scrollTimeline(position: ScrollPosition): void {
+        if(!this.hasData()) {
+            return;
+        }
+
+        // Had problems with this.canvas.scrollIntoView({behaviour: 'smooth', block: 'center', inline: 'end'})
+        // It worked fine in Firefox but didn't work in Chrome, so i went for a manual approach
+
+        // Always center vertically as the Timeline's X-axis is most interesting
+        const verticalMidWindow = window.innerHeight / 2;
+        const verticalMidCanvas = parseInt(this.canvas.style.height, 10) / 2;
+        const dY = Math.abs(verticalMidWindow - verticalMidCanvas);
+
+        // Pick horizontal position
+        const canvasCSSWidth = parseInt(this.canvas.style.width, 10);
+        const horizontalMidWindow = window.innerWidth / 2;
+        const horizontalPositions = {
+            'start' : 0,
+            'end'   : canvasCSSWidth,
+            'center': Math.abs(horizontalMidWindow - canvasCSSWidth / 2),
+        };
+
+        const dX = horizontalPositions[position];
+
+        window.scrollTo({ 
+            top: dY, 
+            left: dX, 
+            behavior: 'smooth'
         });
     }
 
@@ -570,7 +607,7 @@ class Timeline {
 
                 self.setData(data);
                 self.render();
-                self.scrollTimeline('end');
+                self.scrollTimeline(ScrollPosition.End);
             }catch(error: any) {
                 console.error(error);
                 const parseAlert = new Alert(`
@@ -651,7 +688,7 @@ class Timeline {
 
                 self.setData(data);
                 self.render();
-                self.scrollTimeline('end');
+                self.scrollTimeline(ScrollPosition.End);
             }catch(error: any) {
                 console.error(error);
                 const parseAlert = new Alert(`
@@ -679,7 +716,12 @@ class Timeline {
         let width = window.innerWidth * pixelRatio;
 
         // Calculate appropriate width
-        const calculatedWidth = DefaultConstants.xPadding * ((this.zoom.value > 1 ? this.zoom.value : 1) * pixelRatio) + (DefaultConstants.stepDistanceXAxis * this.days.length * this.zoom.value * pixelRatio);
+        let calculatedWidth = 0;
+
+        // Add default padding
+        calculatedWidth += DefaultConstants.xPadding * pixelRatio * (this.zoom.value > 1 ? this.zoom.value : 1);
+        // Add required width based on data to be rendered
+        calculatedWidth += DefaultConstants.stepDistanceXAxis * pixelRatio * this.zoom.value * this.days.length;
 
         if(calculatedWidth > width) {
             width = calculatedWidth;
@@ -705,7 +747,12 @@ class Timeline {
         });
 
         // Calculate appropriate height
-        const calculatedHeight = DefaultConstants.yPadding * ((this.zoom.value > 1 ? this.zoom.value : 1) * pixelRatio) + (DefaultConstants.stepDistanceYAxis * maxActivitiesOnYAxis * 2 * this.zoom.value * pixelRatio);
+        let calculatedHeight = 0;
+
+        // Add default padding
+        calculatedHeight += DefaultConstants.yPadding * pixelRatio * (this.zoom.value > 1 ? this.zoom.value : 1);
+        // Add required height based on data to be rendered (both directions on Y-axis)
+        calculatedHeight += DefaultConstants.stepDistanceYAxis * pixelRatio * this.zoom.value * maxActivitiesOnYAxis * 2;
 
         if(calculatedHeight > height) {
             height = calculatedHeight;
@@ -779,8 +826,8 @@ class Timeline {
 
         // The coordinates must be translated to accommodate for scrolling in the canvas
         const rect = this.canvas.getBoundingClientRect();
-        const relX = (x - (rect.left)) / (this.zoom.value * DEVICE_PIXEL_RATIO);
-        const relY = (y - (rect.top))  / (this.zoom.value * DEVICE_PIXEL_RATIO);
+        const relX = (x - rect.left) / (this.zoom.value * DEVICE_PIXEL_RATIO);
+        const relY = (y - rect.top)  / (this.zoom.value * DEVICE_PIXEL_RATIO);
 
         // How far the detection will be checked away from the clicked coordinate
         const tolerance = DefaultConstants.radius / DEVICE_PIXEL_RATIO;
@@ -872,7 +919,7 @@ class Timeline {
         const ctx = <CanvasRenderingContext2D>this.canvas.getContext('2d');
 
         // Set canvas width and height based no the window and the devicePixelRatio
-        this.canvas.width  = window.innerWidth * DEVICE_PIXEL_RATIO;
+        this.canvas.width  = window.innerWidth  * DEVICE_PIXEL_RATIO;
         this.canvas.height = window.innerHeight * DEVICE_PIXEL_RATIO;
 
         // Clear the canvas
@@ -923,7 +970,7 @@ class Timeline {
         ctx.fillStyle = this.style.textColor;
         ctx.fillText(
             dropLabel, 
-            window.innerWidth / 2 - ctx.measureText(dropLabel).width / 2,
+            window.innerWidth  / 2 - ctx.measureText(dropLabel).width / 2,
             window.innerHeight / 2 + dropIconDimensions.height / 2,
         );
 
@@ -932,13 +979,13 @@ class Timeline {
         ctx.font = `italic 14px Arial`;
         ctx.fillText(
             versionLabel, 
-            window.innerWidth / 2 - ctx.measureText(versionLabel).width / 2,
+            window.innerWidth  / 2 - ctx.measureText(versionLabel).width / 2,
             window.innerHeight / 2 + dropIconDimensions.height / 2 + 20,
         );
 
         // Render drop icon
         ctx.translate(
-            (window.innerWidth / 2) - dropIconDimensions.width / 2, 
+            (window.innerWidth  / 2) - dropIconDimensions.width  / 2, 
             (window.innerHeight / 2) - dropIconDimensions.height - 20
         );
         ctx.fill(dropIconSVGPath);
@@ -967,7 +1014,7 @@ class Timeline {
         ctx.scale(this.zoom.value * DEVICE_PIXEL_RATIO, this.zoom.value * DEVICE_PIXEL_RATIO);
 
         // Set the canvas element width and height to shrink the canvas on devices that have ratio > 1
-        this.canvas.style.width = this.calculateWidth(1) + 'px' // this.canvas.width + 'px';;
+        this.canvas.style.width  = this.calculateWidth(1)  + 'px' // this.canvas.width + 'px';;
         this.canvas.style.height = this.calculateHeight(1) + 'px'; // this.canvas.height + 'px';
 
         // Get the mid of the canvas, must come after the calculate width/height

@@ -22,14 +22,19 @@ class Menu {
                 svg: SVGPaths.Info
             },
             {
-                title: 'Pan Start',
-                callback: this.timeline.menuOnPanStart.bind(this.timeline),
-                svg: SVGPaths.PanStart
+                title: 'Align Start',
+                callback: this.timeline.menuOnAlignStart.bind(this.timeline),
+                svg: SVGPaths.AlignStart
             },
             {
-                title: 'Pan End',
-                callback: this.timeline.menuOnPanEnd.bind(this.timeline),
-                svg: SVGPaths.PanEnd
+                title: 'Align Center',
+                callback: this.timeline.menuOnAlignCenter.bind(this.timeline),
+                svg: SVGPaths.AlignCenter
+            },
+            {
+                title: 'Align End',
+                callback: this.timeline.menuOnAlignEnd.bind(this.timeline),
+                svg: SVGPaths.AlignEnd
             },
             {
                 title: 'Reset Zoom',
