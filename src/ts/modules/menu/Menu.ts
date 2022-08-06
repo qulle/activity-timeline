@@ -59,12 +59,17 @@ class Menu {
             {
                 title: 'Export PNG',
                 callback: this.timeline.menuOnExportPNG.bind(this.timeline),
-                svg: SVGPaths.Export
+                svg: SVGPaths.ExportImage
             },
             {
-                title: 'Upload Timeline Data',
+                title: 'Import Timeline Data',
                 callback: this.timeline.menuOnDataImport.bind(this.timeline),
-                svg: SVGPaths.Upload
+                svg: SVGPaths.Import
+            },
+            {
+                title: 'Export Timeline Data',
+                callback: this.timeline.menuOnDataExport.bind(this.timeline),
+                svg: SVGPaths.ExportData
             },
             {
                 title: 'About',

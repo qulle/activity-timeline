@@ -11,6 +11,7 @@ import { DefaultZoom } from '../defaults/zoom.default';
 import { DefaultPosition } from '../defaults/position.default';
 import { DefaultConstants } from '../defaults/constants.default';
 import { ScrollPosition } from '../types/scroll-position.type';
+import { download } from './helpers/Download';
 import Modal from './modal/Modal';
 import Alert from './dialog/Alert';
 import Menu from './menu/menu';
@@ -179,11 +180,11 @@ class Timeline {
         }
 
         const commands = {
-            s: this.scrollTimeline.bind(this, ScrollPosition.Start),
-            e: this.scrollTimeline.bind(this, ScrollPosition.End),
-            c: this.scrollTimeline.bind(this, ScrollPosition.Center),
-            z: this.resetZoom.bind(this),
-            m: this.menu.toggleMenuStrip.bind(this.menu)
+            's': this.scrollTimeline.bind(this, ScrollPosition.Start),
+            'e': this.scrollTimeline.bind(this, ScrollPosition.End),
+            'c': this.scrollTimeline.bind(this, ScrollPosition.Center),
+            'z': this.resetZoom.bind(this),
+            'm': this.menu.toggleMenuStrip.bind(this.menu)
         };
 
         commands[key]?.call();
@@ -342,14 +343,7 @@ class Timeline {
         }
 
         const dataURL = this.canvas.toDataURL('image/png', 1.0);
-
-        const download = document.createElement('a');
-        download.className = 'at-d-none';
-        download.href = dataURL;
-        download.download = this.filename + '.png';
-        document.body.appendChild(download);
-        download.click();
-        document.body.removeChild(download);
+        download(this.filename + '.png', dataURL);
     }
 
     /**
@@ -455,9 +449,103 @@ class Timeline {
         fileDialog.click();
     }
 
+    /**
+     * Callback function from Menu - Export data to JSON or CSV file
+     */
+    menuOnDataExport(): void {
+        if(!this.hasData()) {
+            return;
+        }
+
+        // Note: Swapped file-formats to save in the format that was not opened
+        const fileParsers = {
+            'json': this.exportAsCSV.bind(this),
+            'csv' : this.exportAsJSON.bind(this)
+        };
+
+        const parser = fileParsers[this.fileExtension];
+
+        if(parser) {
+            parser.call();
+        }else {
+            const fileTypeAlert = new Alert(`
+                <h3 class="at-m-0">Oops!</h3>
+                <p>Could not decide fileformat - report as <a href="https://github.com/qulle/activity-timeline/issues" target="_blank" class="at-link">bug</a></p>
+            `);
+        }
+    }
+
     // --------------------------------------------------------------
     // Logical methods
     // --------------------------------------------------------------
+
+    /**
+     * Export the loaded data as CSV-file (JSON file was opened by user)
+     */
+    exportAsCSV(): void {
+        const data: Data = {
+            meta:  {...this.meta},
+            style: {...this.style},
+            days:  [...this.days]
+        };
+
+        const lineBreak = '\r\n'; 
+        const json = JSON.stringify(data, (key, value) => {
+            // Remove days from the JSON to be stored as meta in the 5th column
+            if(key === 'days') {
+                value = undefined;
+            }
+
+            return value;
+        });
+        
+        let csv = `Timestamp;Title;Description;Fill Color;Stroke Color;${json}${lineBreak}`;
+
+        data.days.forEach(day => {
+            day.activities.forEach(activity => {
+                csv += `${activity.timestamp.toLocaleString(data.meta.locale)};${activity.title};${activity.description};${activity.fillColor};${activity.strokeColor}${lineBreak}`;
+            });
+        });
+
+        // Remove last lineBreak from output to avoid empty line in the CSV-file
+        csv = csv.replace(/\r\n*$/, '');
+
+        download(this.filename + '.csv', csv);
+    }
+
+    /**
+     * Export the loaded data as JSON-file (CSV file was opened by user)
+     */
+    exportAsJSON(): void {
+        const data: Data = {
+            meta:  {...this.meta},
+            style: {...this.style},
+            days:  [...this.days]
+        };
+
+        const indentation = '    ';
+        const json = JSON.stringify(data, (key, value) => {
+            // Remove the coordinates from the output, only used internally
+            if(key === 'x' || key === 'y') {
+                value = undefined;
+            }
+            
+            // Remove default time information from the date
+            if(key === 'date') {
+                value = new Date(value).toLocaleDateString(data.meta.locale);
+            }
+
+            // When a JSON-file is loaded the data + time is added together
+            // Split them apart to not have duplication of information in the file
+            if(key === 'timestamp') {
+                value = new Date(value).toLocaleTimeString(data.meta.locale);
+            }
+
+            return value;
+        }, indentation);
+
+        download(this.filename + '.json', json);
+    }
 
     /**
      * Handles preparation and verifying file extension before parsing the file
@@ -473,8 +561,8 @@ class Timeline {
         this.filename = filename;
 
         const fileParsers = {
-            json: this.parseJSONFile,
-            csv: this.parseCSVFile
+            'json': this.parseJSONFile,
+            'csv' : this.parseCSVFile
         };
 
         const parser = fileParsers[extension];
@@ -648,6 +736,7 @@ class Timeline {
                 const parse = Papa.parse<Activity>(csv, {
                     header: true,
                     delimiter: ';',
+                    skipEmptyLines: true,
                     transformHeader: function(header: string, index: number) {
                         // Check if there is data in the 5th column, this is meta and/or style in JSON format
                         if(index === 5) {
