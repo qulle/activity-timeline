@@ -17,6 +17,11 @@ class Menu {
 
         [
             {
+                title: 'Landing Page',
+                callback: this.timeline.menuOnLandingPage.bind(this.timeline),
+                svg: SVGPaths.Logo
+            },
+            {
                 title: 'Current Timeline',
                 callback: this.timeline.menuOnInfo.bind(this.timeline),
                 svg: SVGPaths.Info

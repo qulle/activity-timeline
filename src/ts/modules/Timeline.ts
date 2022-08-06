@@ -301,6 +301,17 @@ class Timeline {
     // --------------------------------------------------------------
 
     /**
+     * Callback function from Menu - Resets to Landing Page
+     */
+    menuOnLandingPage(): void {
+        this.days  = DefaultData.days;
+        this.style = DefaultData.style;
+        this.meta  = DefaultData.meta;
+
+        this.renderLandingPage();
+    }
+
+    /**
      * Callback function from Menu - Pans to the start (left) of the Timeline
      */
     menuOnAlignStart(): void {
