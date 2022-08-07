@@ -2,7 +2,7 @@
 Portable Activity Timeline that draws the Timeline based on data given in `JSON` or `CSV` format. By clicking on any activity a detailed modal window is displayed. Initially developed for post incident investigations to get a overview of the situation in an it-environment.
 
 ## Latest build - [Demo](https://qulle.github.io/activity-timeline/)
-All version can be found in the `examples` directory.
+All version can be found in the `examples` directory. Read about new features in the [RELEASES](RELEASES.md) log.
 
 ## Screenshots
 The application is not limited to a light and dark theme. Any colors can be used to create custom themes.
@@ -103,6 +103,11 @@ There is no optimal way of provide additional data in a CSV-file in addition to 
 | 2022-07-08 18:36  | Restarted application pool | Some additional information about the activity | #FAD7AC    | #C27B25      |                                                                                                                       |
 | 2022-07-10 12:05  | New release application A  | Some additional information about the activity | #B1DDF0    | #10739E      |                                                                                                                       |
 
+Style JSON-string.
+```json
+{"style":{"textColor":"#D3D9E6","timelineStrokeColor":"#D3D9E6","strokeColor":"#353C4B","backgroundColor":"#3B4352"}}
+```
+
 ## Meta information
 The meta data can be controlled through parameters in in both the JSON and CSV format.
 
@@ -111,7 +116,7 @@ The meta data is provided in a meta-node. If properties are left out or no meta-
 ```json
 {
     "meta": {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "locale": "sv-se"
     },
     "style": {},
@@ -121,19 +126,24 @@ The meta data is provided in a meta-node. If properties are left out or no meta-
 
 ### CSV
 There is no optimal way of provide additional data in a CSV-file in addition to the data itself. The meta data is provided in a JSON-formated string as a `last` header.
-| Timestamp         | Title                      | Description                                    | Fill Color | Stroke Color | {"meta":{"version":"1.1.0","locale":"en-us"}} |
+| Timestamp         | Title                      | Description                                    | Fill Color | Stroke Color | {"meta":{"version":"1.2.0","locale":"en-us"}} |
 |-------------------|----------------------------|------------------------------------------------|------------|--------------|-----------------------------------------------|
 | 2022-07-08 12:23  | Patched webserver          | Some additional information about the activity | #D0CEE2    | #56517E      |                                               |
 | 2022-07-08 18:36  | Restarted application pool | Some additional information about the activity | #FAD7AC    | #C27B25      |                                               |
 | 2022-07-10 12:05  | New release application A  | Some additional information about the activity | #B1DDF0    | #10739E      |                                               |
 
-To have both `style` and `meta` data in the CSV file, use this JSON-string.
+Meta JSON-string.
+```json
+{"meta":{"version":"1.2.0","locale":"en-us"}}
 ```
-{"meta":{"version":"1.1.0","locale":"en-us"},"style":{"textColor":"#D3D9E6","timelineStrokeColor":"#D3D9E6","strokeColor":"#353C4B","backgroundColor":"#3B4352"}}
+
+To have both `style` and `meta` data in the CSV file, use this JSON-string.
+```json
+{"meta":{"version":"1.2.0","locale":"en-us"},"style":{"textColor":"#D3D9E6","timelineStrokeColor":"#D3D9E6","strokeColor":"#353C4B","backgroundColor":"#3B4352"}}
 ```
 
 ## Get started
-The dev-environment uses NPM so you need to have [Node.js](https://nodejs.org/en/) installed. I use Node version *16.16.0* and NPM version *8.11.0*.
+The dev-environment uses NPM so you need to have [Node.js](https://nodejs.org/en/) installed. I use Node version *16.16.0* and NPM version *8.16.0*.
 
 Clone the repo.
 ```
