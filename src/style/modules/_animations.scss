@@ -2,6 +2,10 @@
     &--bounce {
         animation: at-bounce 250ms forwards;
     }
+
+    &--slide-in-left {
+        animation: at-bounce-in-top 250ms forwards;
+    }
 }
 
 @keyframes at-bounce {
@@ -18,5 +22,19 @@
     100% { 
         transform: scale(1.0);
         opacity: 1;
+    }
+}
+
+@keyframes at-bounce-in-top {
+    0% {
+        transform: translateY(-100%);
+    }
+
+    50% {
+        transform: translateY(50%);
+    }
+
+    100% {
+        transform: translateY(0);
     }
 }

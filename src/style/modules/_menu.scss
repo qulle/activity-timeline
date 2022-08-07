@@ -8,6 +8,8 @@
     align-items: center;
     max-width: calc(100% - 2rem);
     overflow: auto;
+    transform: translateY(calc(-100% - 1rem));
+    animation: at-bounce-in-top 400ms forwards 200ms;
 
     -ms-overflow-style: none;
     scrollbar-width: none;

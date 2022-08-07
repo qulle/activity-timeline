@@ -19,6 +19,7 @@ The application is portable, launch the HTML-file in the browser and drop a JSON
 ## Shortcut keys
 - `s` pans to the start of the Timeline
 - `e` pans to the end of the Timeline
+- `c` pans to the center of the Timeline
 - `z` resets to the default zoom level
 - `m` toggles Menu state
 - `ctrl + wheel` zooms the Timeline

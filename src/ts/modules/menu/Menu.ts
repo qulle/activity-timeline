@@ -113,16 +113,12 @@ class Menu {
             path: svg, 
             fill: 'currentColor', 
             stroke: 'none',
+            class: 'at-menu__icon',
             width: 20,
             height: 20
         });
         button.addEventListener('click', () => {
             callback.call();
-        });
-        button.addEventListener('keyup', (event) => {
-            if(event.key.toLowerCase() === 'enter') {
-                callback.call();
-            }
         });
 
         this.menu.appendChild(button);
