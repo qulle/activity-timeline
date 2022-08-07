@@ -1,0 +1,25 @@
+Timestamp;Title;Description;Fill Color;Stroke Color;{"meta":{"version":"1.2.0","locale":"en-us"}}
+2022-07-08 12:23;Patched webserver;Some additional information about the activity;#D0CEE2;#56517E
+2022-07-08 13:55;Restarted sql cluster;Some additional information about the activity;#FAD7AC;#C27B25
+2022-07-08 18:36;Restarted application pool;Some additional information about the activity;#FAD7AC;#C27B25
+2022-07-09 06:33;Application error in log.txt;Some additional information about the activity;#FAD9D5;#AE4132
+2022-07-09 11:29;Application error in log.txt;Some additional information about the activity;#FAD9D5;#AE4132
+2022-07-09 13:55;Restarted sql cluster;Some additional information about the activity;#FAD7AC;#C27B25
+2022-07-09 18:36;Restarted application pool;Some additional information about the activity;#FAD7AC;#C27B25
+2022-07-09 21:36;Customer reports no futher problems;Some additional information about the activity;#B0E3E6;#0E8088
+2022-07-10 18:36;Restarted application pool;Some additional information about the activity;#FAD7AC;#C27B25
+2022-07-12 12:05;New release application A;Some additional information about the activity;#B1DDF0;#10739E
+2022-07-13 06:33;Application error in log.txt;Some additional information about the activity;#FAD9D5;#AE4132
+2022-07-13 11:29;Application error in log.txt;Some additional information about the activity;#FAD9D5;#AE4132
+2022-07-13 13:55;Restarted sql cluster;Some additional information about the activity;#FAD7AC;#C27B25
+2022-07-13 18:36;Restarted application pool;Some additional information about the activity;#FAD7AC;#C27B25
+2022-07-13 19:00;Patched webserver A;Some additional information about the activity;#D0CEE2;#56517E
+2022-07-13 20:00;Patched webserver B;Some additional information about the activity;#D0CEE2;#56517E
+2022-07-13 23:30;Customer reports no futher problems;Some additional information about the activity;#B0E3E6;#0E8088
+2022-07-14 07:05;Restarted printers;Some additional information about the activity;#FAD7AC;#C27B25
+2022-07-14 12:00;Installed new SSL Cert;Some additional information about the activity;#D0CEE2;#56517E
+2022-07-16 12:23;Patched webserver;Some additional information about the activity;#D0CEE2;#56517E
+2022-07-16 13:55;Restarted sql cluster;Some additional information about the activity;#FAD7AC;#C27B25
+2022-07-16 18:36;Restarted application pool;Some additional information about the activity;#FAD7AC;#C27B25
+2022-07-18 12:05;New release application A;Some additional information about the activity;#B1DDF0;#10739E
+2022-07-18 12:30;New release application B;Some additional information about the activity;#B1DDF0;#10739E

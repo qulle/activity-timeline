@@ -1,7 +1,7 @@
 # Releases
 
 ## 1.2.0
-TBA
+2022-08-07
 
 Some of the changes done in this version is:
 

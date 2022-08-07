@@ -1,0 +1,216 @@
+{
+    "meta": {
+        "version": "1.2.0",
+        "locale": "en-us"
+    },
+    "days": [
+        {
+            "date": "2022-07-08",
+            "activities": [
+                {
+                    "timestamp": "12:23",
+                    "title": "Patched webserver",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#D0CEE2",
+                    "strokeColor": "#56517E"
+                },
+                {
+                    "timestamp": "13:55",
+                    "title": "Restarted sql cluster",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#FAD7AC",
+                    "strokeColor": "#C27B25"
+                },
+                {
+                    "timestamp": "18:36",
+                    "title": "Restarted application pool",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#FAD7AC",
+                    "strokeColor": "#C27B25"
+                }
+            ]
+        },
+        {
+            "date": "2022-07-09",
+            "activities": [
+                {
+                    "timestamp": "06:33",
+                    "title": "Application error in log.txt",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#FAD9D5",
+                    "strokeColor": "#AE4132"
+                },
+                {
+                    "timestamp": "11:29",
+                    "title": "Application error in log.txt",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#FAD9D5",
+                    "strokeColor": "#AE4132"
+                },
+                {
+                    "timestamp": "13:55",
+                    "title": "Restarted sql cluster",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#FAD7AC",
+                    "strokeColor": "#C27B25"
+                },
+                {
+                    "timestamp": "18:36",
+                    "title": "Restarted application pool",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#FAD7AC",
+                    "strokeColor": "#C27B25"
+                },
+                {
+                    "timestamp": "21:36",
+                    "title": "Customer reports no futher problems",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#B0E3E6",
+                    "strokeColor": "#0E8088"
+                }
+            ]
+        },
+        {
+            "date": "2022-07-10",
+            "activities": [
+                {
+                    "timestamp": "18:36",
+                    "title": "Restarted application pool",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#FAD7AC",
+                    "strokeColor": "#C27B25"
+                }
+            ]
+        },
+        {
+            "date": "2022-07-12",
+            "activities": [
+                {
+                    "timestamp": "12:05",
+                    "title": "New release application A",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#B1DDF0",
+                    "strokeColor": "#10739E"
+                }
+            ]
+        },
+        {
+            "date": "2022-07-13",
+            "activities": [
+                {
+                    "timestamp": "06:33",
+                    "title": "Application error in log.txt",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#FAD9D5",
+                    "strokeColor": "#AE4132"
+                },
+                {
+                    "timestamp": "11:29",
+                    "title": "Application error in log.txt",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#FAD9D5",
+                    "strokeColor": "#AE4132"
+                },
+                {
+                    "timestamp": "13:55",
+                    "title": "Restarted sql cluster",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#FAD7AC",
+                    "strokeColor": "#C27B25"
+                },
+                {
+                    "timestamp": "18:36",
+                    "title": "Restarted application pool",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#FAD7AC",
+                    "strokeColor": "#C27B25"
+                },
+                {
+                    "timestamp": "19:00",
+                    "title": "Patched webserver A",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#D0CEE2",
+                    "strokeColor": "#56517E"
+                },
+                {
+                    "timestamp": "20:00",
+                    "title": "Patched webserver B",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#D0CEE2",
+                    "strokeColor": "#56517E"
+                },
+                {
+                    "timestamp": "23:30",
+                    "title": "Customer reports no futher problems",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#B0E3E6",
+                    "strokeColor": "#0E8088"
+                }
+            ]
+        },
+        {
+            "date": "2022-07-14",
+            "activities": [
+                {
+                    "timestamp": "07:05",
+                    "title": "Restarted printers",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#FAD7AC",
+                    "strokeColor": "#C27B25"
+                },
+                {
+                    "timestamp": "12:00",
+                    "title": "Installed new SSL Cert",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#D0CEE2",
+                    "strokeColor": "#56517E"
+                }
+            ]
+        },
+        {
+            "date": "2022-07-16",
+            "activities": [
+                {
+                    "timestamp": "12:23",
+                    "title": "Patched webserver",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#D0CEE2",
+                    "strokeColor": "#56517E"
+                },
+                {
+                    "timestamp": "13:55",
+                    "title": "Restarted sql cluster",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#FAD7AC",
+                    "strokeColor": "#C27B25"
+                },
+                {
+                    "timestamp": "18:36",
+                    "title": "Restarted application pool",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#FAD7AC",
+                    "strokeColor": "#C27B25"
+                }
+            ]
+        },
+        {
+            "date": "2022-07-18",
+            "activities": [
+                {
+                    "timestamp": "12:05",
+                    "title": "New release application A",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#B1DDF0",
+                    "strokeColor": "#10739E"
+                },
+                {
+                    "timestamp": "12:30",
+                    "title": "New release application B",
+                    "description": "Some additional information about the activity",
+                    "fillColor": "#B1DDF0",
+                    "strokeColor": "#10739E"
+                }
+            ]
+        }
+    ]
+}
