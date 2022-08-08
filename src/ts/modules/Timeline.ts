@@ -173,17 +173,30 @@ class Timeline {
         const key = event.key.toLowerCase();
 
         // Don't trigger shortcut if no data or more complex predefined shortcut by browser
-        if((!this.hasData() && key !== 'm') ||
-            event.ctrlKey || event.shiftKey
+        if((
+            !this.hasData() && 
+            key !== 'm'     && 
+            key !== 'a'     &&
+            key !== 'o')    || 
+            event.ctrlKey   || 
+            event.shiftKey
         ) {
             return;
         }
 
         const commands = {
-            's': this.scrollTimeline.bind(this, ScrollPosition.Start),
-            'e': this.scrollTimeline.bind(this, ScrollPosition.End),
-            'c': this.scrollTimeline.bind(this, ScrollPosition.Center),
-            'z': this.resetZoom.bind(this),
+            'a': this.menuOnAbout.bind(this),
+            's': this.menuOnAlignStart.bind(this),
+            'e': this.menuOnAlignEnd.bind(this),
+            'c': this.menuOnAlignCenter.bind(this),
+            'z': this.menuOnZoomReset.bind(this),
+            'i': this.menuOnInfo.bind(this),
+            'h': this.menuOnLandingPage.bind(this),
+            'o': this.menuOnDataImport.bind(this),
+            'p': this.menuOnExportPNG.bind(this),
+            'd': this.menuOnDataExport.bind(this),
+            '+': this.menuOnZoomDelta.bind(this, 1),
+            '-': this.menuOnZoomDelta.bind(this, -1),
             'm': this.menu.toggleMenuStrip.bind(this.menu)
         };
 
@@ -382,22 +395,23 @@ class Timeline {
             totActivities += dayLenght;
         });
 
-        const startDate = this.days[0].date;
-        const endDate   = this.days[this.days.length - 1].date;
-
+        const startDate  = this.days[0].date;
+        const endDate    = this.days[this.days.length - 1].date;
         const dateDiff   = endDate.getTime() - startDate.getTime();
         const timePeriod = Math.ceil(dateDiff / (1000 * 3600 * 24));
+        const avarage    = totActivities / this.days.length;
+        const percent    = (this.days.length / timePeriod) * 100;
 
         const content = `
             <p>File: <strong>${this.filename}.${this.fileExtension}</strong></p>
             <p>First date: <strong>${startDate.toLocaleDateString(this.meta.locale)}</strong></p>
             <p>Last date: <strong>${endDate.toLocaleDateString(this.meta.locale)}</strong></p>
             <p>Time period: <strong>${timePeriod} days</strong></p>
-            <p>Activities on: <strong>${this.days.length} days</strong> corresponding to <strong>${(this.days.length / timePeriod) * 100}%</strong> of time period</p>
+            <p>Activities on: <strong>${this.days.length} days</strong> corresponding to <strong>${Number(percent.toFixed(2))}%</strong> of time period</p>
             <p>Total activites: <strong>${totActivities} st</strong></p>
             <p>Most activites in a day: <strong>${maxActivities} st</strong></p>
             <p>Least activites in a day: <strong>${minActivities} st</strong></p>
-            <p>Avarage activites in a day: <strong>${totActivities / this.days.length} st</strong></p>
+            <p>Avarage activites in a day: <strong>${Number(avarage.toFixed(2))} st</strong></p>
         `;
 
         const modal = new Modal('Current Timeline', content);
@@ -482,7 +496,7 @@ class Timeline {
     /**
      * Export the loaded data as CSV-file (JSON file was opened by user)
      */
-    exportAsCSV(): void {
+    private exportAsCSV(): void {
         const data: Data = {
             meta:  {...this.meta},
             style: {...this.style},
@@ -516,7 +530,7 @@ class Timeline {
     /**
      * Export the loaded data as JSON-file (CSV file was opened by user)
      */
-    exportAsJSON(): void {
+    private exportAsJSON(): void {
         const data: Data = {
             meta:  {...this.meta},
             style: {...this.style},

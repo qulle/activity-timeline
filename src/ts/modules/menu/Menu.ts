@@ -17,67 +17,67 @@ class Menu {
 
         [
             {
-                title: 'Landing Page',
+                title: 'Landing Page (H)',
                 callback: this.timeline.menuOnLandingPage.bind(this.timeline),
                 svg: SVGPaths.Logo
             },
             {
-                title: 'Current Timeline',
+                title: 'Current Timeline (I)',
                 callback: this.timeline.menuOnInfo.bind(this.timeline),
                 svg: SVGPaths.Info
             },
             {
-                title: 'Align Start',
+                title: 'Align Start (S)',
                 callback: this.timeline.menuOnAlignStart.bind(this.timeline),
                 svg: SVGPaths.AlignStart
             },
             {
-                title: 'Align Center',
+                title: 'Align Center (C)',
                 callback: this.timeline.menuOnAlignCenter.bind(this.timeline),
                 svg: SVGPaths.AlignCenter
             },
             {
-                title: 'Align End',
+                title: 'Align End (E)',
                 callback: this.timeline.menuOnAlignEnd.bind(this.timeline),
                 svg: SVGPaths.AlignEnd
             },
             {
-                title: 'Reset Zoom',
+                title: 'Reset Zoom (Z)',
                 callback: this.timeline.menuOnZoomReset.bind(this.timeline),
                 svg: SVGPaths.ZoomReset
             },
             {
-                title: 'Zoom Out',
+                title: 'Zoom Out (-)',
                 callback: this.timeline.menuOnZoomDelta.bind(this.timeline, -1),
                 svg: SVGPaths.ZoomOut
             },
             {
-                title: 'Zoom In',
+                title: 'Zoom In (+)',
                 callback: this.timeline.menuOnZoomDelta.bind(this.timeline, 1),
                 svg: SVGPaths.ZoomIn
             },
             {
-                title: 'Export PNG',
+                title: 'Export PNG (P)',
                 callback: this.timeline.menuOnExportPNG.bind(this.timeline),
                 svg: SVGPaths.ExportImage
             },
             {
-                title: 'Import Timeline Data',
+                title: 'Import Timeline Data (O)',
                 callback: this.timeline.menuOnDataImport.bind(this.timeline),
                 svg: SVGPaths.Import
             },
             {
-                title: 'Export Timeline Data',
+                title: 'Export Timeline Data (D)',
                 callback: this.timeline.menuOnDataExport.bind(this.timeline),
                 svg: SVGPaths.ExportData
             },
             {
-                title: 'About',
+                title: 'About (A)',
                 callback: this.timeline.menuOnAbout.bind(this.timeline),
                 svg: SVGPaths.About
             },
             {
-                title: 'Toggle Menu',
+                title: 'Toggle Menu (M)',
                 callback: this.toggleMenuStrip.bind(this),
                 svg: SVGPaths.Menu,
                 className: 'at-menu__item-toggle'

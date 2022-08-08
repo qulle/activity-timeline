@@ -1,6 +1,6 @@
 {
     "name": "activity-timeline",
-    "version": "1.2.0",
+    "version": "1.3.0-wip",
     "description": "Portable activity timeline that draws the timeline based on data given in JSON format.",
     "scripts": {
         "start": "parcel src/index.html --open",
