@@ -17,13 +17,21 @@ The application is not limited to a light and dark theme. Any colors can be used
 The application is portable, launch the HTML-file in the browser and drop a JSON/CSV-file in the application. The application renders a Timeline of all activities and provides an easy-to-understand sequence of events.
 
 ## Shortcut keys
-- `s` pans to the start of the Timeline
-- `e` pans to the end of the Timeline
-- `c` pans to the center of the Timeline
-- `z` resets to the default zoom level
-- `m` toggles Menu state
-- `ctrl + wheel` zooms the Timeline
-- `click + drag` pans the Timeline
+- `A` Show About window
+- `S` Pans to the start of the Timeline
+- `E` Pans to the end of the Timeline
+- `C` Pans to the center of the Timeline
+- `Z` Resets to the default zoom level
+- `I` Show information about current Timeline
+- `H` Load Landing Page
+- `O` Open file to render
+- `P` Export PNG
+- `D` Export Timeline data
+- `+` Zoom in 
+- `-` Zoom out
+- `M` Toggles Menu state
+- `ctrl + wheel` Zooms the Timeline
+- `click + drag` Pans the Timeline
 
 ## Data
 There are two ways of providing data, either via `JSON` or `CSV`. In both cases the data is sorted in the application to always be shown in the correct order according to the date and timestamp. The description is displayed in a modal window when an activity is clicked in the Timeline.

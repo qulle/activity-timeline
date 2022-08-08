@@ -60,7 +60,7 @@ class Timeline {
         this.style = DefaultData.style;
 
         // Disable default browser behaviour
-        ['wheel', 'dragenter', 'dragover', 'dragleave', 'drop', 'contextmenu'].forEach((eventName: string) => {
+        ['wheel', 'dragenter', 'dragover', 'dragleave', 'drop', 'contextmenu', 'mousedown'].forEach((eventName: string) => {
             document.addEventListener(eventName, this.onEventPrevent, { passive: false });
         });
 
@@ -130,6 +130,8 @@ class Timeline {
      * @param event MouseEvent
      */
     private onCanvasMouseDown(event: MouseEvent): void {
+        this.canvas.focus();
+
         this.dragPosition = {
             left: SCROLLABLE_TARGET.scrollLeft,
             top: SCROLLABLE_TARGET.scrollTop,
@@ -171,14 +173,13 @@ class Timeline {
      */
     private onCanvasKeyDown(event: KeyboardEvent): void {
         const key = event.key.toLowerCase();
+        const allowedKeysOnLandingPage = ['m', 'a', 'o'];
 
         // Don't trigger shortcut if no data or more complex predefined shortcut by browser
         if((
             !this.hasData() && 
-            key !== 'm'     && 
-            key !== 'a'     &&
-            key !== 'o')    || 
-            event.ctrlKey   || 
+            !allowedKeysOnLandingPage.includes(key)) || 
+            event.ctrlKey || 
             event.shiftKey
         ) {
             return;
