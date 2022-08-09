@@ -196,6 +196,7 @@ class Timeline {
             'o': this.menuOnDataImport.bind(this),
             'p': this.menuOnExportPNG.bind(this),
             'd': this.menuOnDataExport.bind(this),
+            'n': this.menuOnFetchNotification.bind(this),
             '+': this.menuOnZoomDelta.bind(this, 1),
             '-': this.menuOnZoomDelta.bind(this, -1),
             'm': this.menu.toggleMenuStrip.bind(this.menu)
@@ -488,6 +489,19 @@ class Timeline {
                 <p>Could not decide fileformat - report as <a href="https://github.com/qulle/activity-timeline/issues" target="_blank" class="at-link">bug</a></p>
             `);
         }
+    }
+
+    menuOnFetchNotification(): void {
+        fetch('https://raw.githubusercontent.com/qulle/activity-timeline/main/endpoints/notifications.json')
+            .then(response => response.json())
+            .then(notifications => {
+                let content = '';
+                notifications.data.forEach((notification: string) => {
+                    content += '<p>' + notification + '</p>';
+                });
+
+                const notificationModal = new Modal('Notifications', content);
+            });
     }
 
     // --------------------------------------------------------------

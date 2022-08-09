@@ -72,6 +72,11 @@ class Menu {
                 svg: SVGPaths.ExportData
             },
             {
+                title: 'Notifications (N)',
+                callback: this.timeline.menuOnFetchNotification.bind(this.timeline),
+                svg: SVGPaths.Bell
+            },
+            {
                 title: 'About (A)',
                 callback: this.timeline.menuOnAbout.bind(this.timeline),
                 svg: SVGPaths.About

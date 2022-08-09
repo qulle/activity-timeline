@@ -27,6 +27,7 @@ The application is portable, launch the HTML-file in the browser and drop a JSON
 - `O` Open file to render
 - `P` Export PNG
 - `D` Export Timeline data
+- `N` Show notifications from the developer
 - `+` Zoom in 
 - `-` Zoom out
 - `M` Toggles Menu state
