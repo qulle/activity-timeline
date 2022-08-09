@@ -740,7 +740,7 @@ class Timeline {
     private parseCSVFile(file: File): void {
         const self = this;
         const reader = new FileReader();
-        reader.readAsText(file);
+        reader.readAsBinaryString(file);
         reader.onloadend = function() {
             try {
                 let meta  = {};
