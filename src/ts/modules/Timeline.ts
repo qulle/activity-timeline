@@ -28,6 +28,9 @@ const SCROLLABLE_TARGET = document.documentElement;
 // Canvas needs to factor in the device resolution in order to look sharp on high-res retina screens/mobile devices etc.
 const DEVICE_PIXEL_RATIO = window.devicePixelRatio || 1;
 
+// URL to the raw GitHub JSON object containing information from the developer
+const NOTIFICATION_URL = 'https://raw.githubusercontent.com/qulle/activity-timeline/main/endpoints/notifications.json';
+
 /**
  * Class to render Timeline on a HTMLCanvasElement
  */
@@ -492,15 +495,41 @@ class Timeline {
     }
 
     menuOnFetchNotification(): void {
-        fetch('https://raw.githubusercontent.com/qulle/activity-timeline/main/endpoints/notifications.json')
-            .then(response => response.json())
-            .then(notifications => {
-                let content = '';
-                notifications.data.forEach((notification: string) => {
-                    content += '<p>' + notification + '</p>';
-                });
+        const notificationModal = new Modal('Notifications', '<p>Loading notifications...</p>');
 
-                const notificationModal = new Modal('Notifications', content);
+        fetch(NOTIFICATION_URL)
+            .then(async response => {
+                const data = await response.json();
+
+                if(!response.ok) {
+                    return Promise.reject((data && data.message) || response.status);
+                }
+
+                let features = '';
+                if(data.features.length === 0) {
+                    features = '<p>No features currently under development</p>';
+                }else {
+                    data.features.forEach((feature: string) => {
+                        features += `<p>${feature}</p>`;
+                    });
+                }
+
+                const content = `
+                    <h3>👋 From Qulle</h3>
+                    <p>${data.qulle}</p>
+                    <h3>🔭 Your version</h3>
+                    <p>v${VERSION}</p>
+                    <h3>🚀 Latest version</h3>
+                    <p>v${data.latest} - ${new Date(data.released).toLocaleDateString(this.meta.locale)}</p>
+                    <h3>💡 New features under development</h3>
+                    ${features}
+                `;
+
+                notificationModal.setModalContent(content);
+            })
+            .catch(error => {
+                notificationModal.setModalContent(`<p>Error: ${error}</p>`);
+                console.error('Fetch error:', error);
             });
     }
 

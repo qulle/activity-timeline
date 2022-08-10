@@ -1,5 +1,9 @@
 {
+    "qulle": "Glad you are using my App, hope you find it useful!",
     "latest": "1.2.0",
-    "qulle": "Glad you are using my project, hope you find it useful!",
-    "features": []
+    "released": "2022-08-07",
+    "features": [
+        "Notification system - fetching news from GitHub repo",
+        "Timeline export - finetuning export looking for bugs"
+    ]
 }

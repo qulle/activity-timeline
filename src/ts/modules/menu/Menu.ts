@@ -112,6 +112,7 @@ class Menu {
 
     addMenuItem(title: string, callback: any, svg: string, className: string = ''): void {
         const button = document.createElement('button');
+        button.type = 'button';
         button.className = `at-btn at-btn--blue-mid at-btn--round at-menu__item ${className}`;
         button.title = title;
         button.innerHTML = getIcon({
