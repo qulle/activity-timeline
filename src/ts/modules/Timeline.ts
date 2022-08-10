@@ -682,7 +682,12 @@ class Timeline {
      */
     private resetZoom(): void {
         this.zoom.value = 1;
-        this.render();
+        
+        // Only re-render the Timeline, not the Landing Page
+        // We are already rendering the Landing Page when the resetZoom method is called
+        if(this.hasData()) {
+            this.render();
+        }
     }
 
     /**
@@ -754,7 +759,7 @@ class Timeline {
     private parseCSVFile(file: File): void {
         const self = this;
         const reader = new FileReader();
-        reader.readAsBinaryString(file);
+        reader.readAsText(file, 'iso-8859-1');
         reader.onloadend = function() {
             try {
                 let meta  = {};
@@ -1045,6 +1050,9 @@ class Timeline {
      * Renders the landing page when the app is first started
      */
     renderLandingPage(): void {
+        // Reset zoom, the user might have zoomed the Timeline and then navigated to the Landing Page
+        this.resetZoom();
+
         // Context to render elements on
         const ctx = <CanvasRenderingContext2D>this.canvas.getContext('2d');
 

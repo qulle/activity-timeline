@@ -1,5 +1,15 @@
 # Releases
 
+## 1.3.0
+TBA
+
+Some of the changes done in this version is:
+
+- Added notifications menu button, recieves messages from the developer fetched from the GitHub repo
+- Fixed encoding problem when opening a CSV-file that was edited in Excel using ISO-8859-1 aka Windows-1252 aka CP1252
+- Added keybord shortcuts for all the menu options
+- Improved user experience when panning the Timeline using the scroll-mouse-button
+
 ## 1.2.0
 2022-08-07
 
