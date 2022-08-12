@@ -794,8 +794,13 @@ class Timeline {
                 let meta  = {};
                 let style = {};
 
-                const headerNames = ['timestamp', 'title', 'description', 'fillColor', 'strokeColor', ''];
-                const csv = <string>reader.result;
+                // Remove ghost lines that dosen't contain any data what so ever - Excel might not remove the delimiter
+                const csv = (<string>reader.result)
+                    .replace(';;;;;', '') // Ghost rows in files with JSON Data
+                    .replace(';;;;', '')  // Ghost rows in files without JSON Data
+                    .trim();              // Remove pre- and post linebreaks
+
+                const headerNames = ['timestamp', 'title', 'description', 'fillColor', 'strokeColor', 'json'];
                 const parse = Papa.parse<Activity>(csv, {
                     header: true,
                     delimiter: ';',
@@ -817,6 +822,12 @@ class Timeline {
                     }
                 });
 
+                // If there was a 5th column with JSON data
+                // Remove that empty propertie from the data
+                parse.data.forEach(row => {
+                    delete row['json'];
+                });
+                
                 // Group the activites by date 
                 const groupedDays = parse.data.reduce((activites: Object, row: Activity) => {
                     const date = new Date(row.timestamp);
@@ -845,9 +856,9 @@ class Timeline {
                 });
 
                 const data: Data = {
-                    meta:  { ...DefaultData.meta,  ...meta  || {}},
-                    style: { ...DefaultData.style, ...style || {}},
-                    days:  [ ...DefaultData.days,  ...days  || []]
+                    meta:  { ...DefaultData.meta,  ...(meta  || {}) },
+                    style: { ...DefaultData.style, ...(style || {}) },
+                    days:  [ ...DefaultData.days,  ...(days  || []) ]
                 };
 
                 self.setData(data);
@@ -1181,8 +1192,8 @@ class Timeline {
         ctx.scale(this.zoom.value * DEVICE_PIXEL_RATIO, this.zoom.value * DEVICE_PIXEL_RATIO);
 
         // Set the canvas element width and height to shrink the canvas on devices that have ratio > 1
-        this.canvas.style.width  = this.calculateWidth(1)  + 'px' // this.canvas.width + 'px';;
-        this.canvas.style.height = this.calculateHeight(1) + 'px'; // this.canvas.height + 'px';
+        this.canvas.style.width  = this.calculateWidth(1)  + 'px';
+        this.canvas.style.height = this.calculateHeight(1) + 'px';
 
         // Get the mid of the canvas, must come after the calculate width/height
         const mid = this.getVerticalMid();
