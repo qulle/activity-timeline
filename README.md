@@ -17,7 +17,7 @@ The application is not limited to a light and dark theme. Any colors can be used
 The application is portable, launch the HTML-file in the browser and drop a JSON/CSV-file in the application. The application renders a Timeline of all activities and provides an easy-to-understand sequence of events.
 
 ## Shortcut keys
-- `A` Show About window
+- `G` Show GitHub window
 - `S` Pans to the start of the Timeline
 - `E` Pans to the end of the Timeline
 - `C` Pans to the center of the Timeline
