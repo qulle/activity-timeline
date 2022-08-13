@@ -11,6 +11,7 @@ Some of the changes done in this version is:
 - Improved user experience when panning the Timeline using the scroll-mouse-button
 - Fixed "ghost lines" in CSV where Excel is not removing the delimiter when removing a line
 - Fixed the blank property that originated from the 5th column in the CSV file representing the JSON data
+- Improved the overall code quality
 
 ## 1.2.0
 2022-08-07

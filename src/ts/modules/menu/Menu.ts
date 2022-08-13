@@ -77,8 +77,8 @@ class Menu {
                 svg: SVGPaths.Bell
             },
             {
-                title: 'About (A)',
-                callback: this.timeline.menuOnAbout.bind(this.timeline),
+                title: 'GitHub (G)',
+                callback: this.timeline.menuOnGitHub.bind(this.timeline),
                 svg: SVGPaths.About
             },
             {

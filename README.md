@@ -86,6 +86,8 @@ The data is given in CSV format using `;` (semicolon) as delimiter. It is import
 | 2022-07-08 18:36  | Restarted application pool | Some additional information about the activity | #FAD7AC    | #C27B25      |
 | 2022-07-10 12:05  | New release application A  | Some additional information about the activity | #B1DDF0    | #10739E      |
 
+**Note:** Excel encodes the CSV-file in `ISO-8859-1` when Swedish characters are used, therefore the file is always opened using the same encoding.
+
 ## Theme
 The theme can be controlled through parameters in in both the JSON and CSV format. Colors cab be provided in the formats `Hex`, `RGB(A)` and `Names`.
 

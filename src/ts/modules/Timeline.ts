@@ -5,6 +5,7 @@ import { Meta } from '../models/meta.model';
 import { Style } from '../models/style.model';
 import { Position } from '../models/position.model';
 import { Activity } from '../models/activity.model';
+import { FileData } from '../models/filedata.model';
 import { Coordinate } from '../models/coordinate.model';
 import { DefaultData } from '../defaults/data.default';
 import { DefaultZoom } from '../defaults/zoom.default';
@@ -44,8 +45,7 @@ class Timeline {
     private zoom: Zoom;
     private isDragging: boolean;
     private dragPosition: Position;
-    private filename: string;
-    private fileExtension: string;
+    private fileData: FileData;
 
     // Intermittent event listeners
     private canvasMouseMoveCallback: any;
@@ -176,7 +176,7 @@ class Timeline {
      */
     private onCanvasKeyDown(event: KeyboardEvent): void {
         const key = event.key.toLowerCase();
-        const allowedKeysOnLandingPage = ['m', 'a', 'o'];
+        const allowedKeysOnLandingPage = ['m', 'g', 'o'];
 
         // Don't trigger shortcut if no data or more complex predefined shortcut by browser
         if((
@@ -189,7 +189,7 @@ class Timeline {
         }
 
         const commands = {
-            'a': this.menuOnAbout.bind(this),
+            'g': this.menuOnGitHub.bind(this),
             's': this.menuOnAlignStart.bind(this),
             'e': this.menuOnAlignEnd.bind(this),
             'c': this.menuOnAlignCenter.bind(this),
@@ -361,15 +361,15 @@ class Timeline {
         }
 
         const dataURL = this.canvas.toDataURL('image/png', 1.0);
-        download(this.filename + '.png', dataURL);
+        download(this.fileData.name + '.png', dataURL);
     }
 
     /**
      * Callback function from Menu - Displays About information
      */
-    menuOnAbout(): void {
+    menuOnGitHub(): void {
         const aboutAlert = new Alert(`
-            <h3 class="at-m-0">Version ${VERSION}</h3>
+            <h3 class="at-m-0">GitHub</h3>
             <p>Developed by Qulle <a href="https://github.com/qulle/activity-timeline" target="_blank" class="at-link">github.com/qulle/activity-timeline</a></p>
         `);
     }
@@ -408,7 +408,8 @@ class Timeline {
         const percent    = (this.days.length / timePeriod) * 100;
 
         const content = `
-            <p>File: <strong>${this.filename}.${this.fileExtension}</strong></p>
+            <p>File: <strong>${this.fileData.name}.${this.fileData.extension}</strong></p>
+            <p>Opened: <strong>${this.fileData.opened.toLocaleTimeString(this.meta.locale)}</strong></p>
             <p>First date: <strong>${startDate.toLocaleDateString(this.meta.locale)}</strong></p>
             <p>Last date: <strong>${endDate.toLocaleDateString(this.meta.locale)}</strong></p>
             <p>Time period: <strong>${timePeriod} days</strong></p>
@@ -482,7 +483,7 @@ class Timeline {
             'csv' : this.exportAsJSON.bind(this)
         };
 
-        const parser = fileParsers[this.fileExtension];
+        const parser = fileParsers[this.fileData.extension];
 
         if(parser) {
             parser.call();
@@ -518,9 +519,17 @@ class Timeline {
                     <h3>👋 From Qulle</h3>
                     <p>${data.qulle}</p>
                     <h3>🔭 Your version</h3>
-                    <p>v${VERSION}</p>
+                    <p>
+                        <a href="https://github.com/qulle/activity-timeline/tree/main/examples/v${VERSION}" target="_blank" class="at-link">
+                            v${VERSION}
+                        </a>
+                    </p>
                     <h3>🚀 Latest version</h3>
-                    <p>v${data.latest} - ${new Date(data.released).toLocaleDateString(this.meta.locale)}</p>
+                    <p>
+                        <a href="https://github.com/qulle/activity-timeline/tree/main/examples/v${data.latest}" target="_blank" class="at-link">
+                            v${data.latest} - ${new Date(data.released).toLocaleDateString(this.meta.locale)}
+                        </a>
+                    </p>
                     <h3>💡 New features under development</h3>
                     ${features}
                 `;
@@ -568,7 +577,7 @@ class Timeline {
         // Remove last lineBreak from output to avoid empty line in the CSV-file
         csv = csv.replace(/\r\n*$/, '');
 
-        download(this.filename + '.csv', csv);
+        download(this.fileData.name + '.csv', csv);
     }
 
     /**
@@ -602,7 +611,7 @@ class Timeline {
             return value;
         }, indentation);
 
-        download(this.filename + '.json', json);
+        download(this.fileData.name + '.json', json);
     }
 
     /**
@@ -614,9 +623,12 @@ class Timeline {
         const filename  = file.name.substring(0, index) || file.name;
         const extension = file.name.substring(index + 1).toLowerCase() || file.name;
 
-        // Store filename, used when exporting the Timeline as PNG
-        this.fileExtension = extension;
-        this.filename = filename;
+        // Store information about the opened file, used at other palces
+        this.fileData = {
+            name: filename,
+            extension: extension,
+            opened: new Date()
+        };
 
         const fileParsers = {
             'json': this.parseJSONFile,
@@ -763,9 +775,9 @@ class Timeline {
                 });
 
                 const data: Data = {
-                    meta:  { ...DefaultData.meta,  ...parse['meta']  || {}},
-                    style: { ...DefaultData.style, ...parse['style'] || {}},
-                    days:  [ ...DefaultData.days,  ...parse['days']  || []]
+                    meta:  { ...DefaultData.meta,  ...(parse['meta']  || {}) },
+                    style: { ...DefaultData.style, ...(parse['style'] || {}) },
+                    days:  [ ...DefaultData.days,  ...(parse['days']  || []) ]
                 };
 
                 self.setData(data);
