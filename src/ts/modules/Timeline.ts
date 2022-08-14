@@ -365,7 +365,7 @@ class Timeline {
     }
 
     /**
-     * Callback function from Menu - Displays About information
+     * Callback function from Menu - Displays GitHub information
      */
     menuOnGitHub(): void {
         const aboutAlert = new Alert(`
@@ -410,6 +410,7 @@ class Timeline {
         const content = `
             <p>File: <strong>${this.fileData.name}.${this.fileData.extension}</strong></p>
             <p>Opened: <strong>${this.fileData.opened.toLocaleTimeString(this.meta.locale)}</strong></p>
+            <p>Localization: <strong>${this.meta.locale}</strong></p>
             <p>First date: <strong>${startDate.toLocaleDateString(this.meta.locale)}</strong></p>
             <p>Last date: <strong>${endDate.toLocaleDateString(this.meta.locale)}</strong></p>
             <p>Time period: <strong>${timePeriod} days</strong></p>
@@ -537,7 +538,19 @@ class Timeline {
                 notificationModal.setModalContent(content);
             })
             .catch(error => {
-                notificationModal.setModalContent(`<p>Error: ${error}</p>`);
+                const content = `
+                    <h3>👋 From Qulle</h3>
+                    <p>Glad you are using my App, hope you find it useful!</p>
+                    <h3>🔭 Your version</h3>
+                    <p>
+                        <a href="https://github.com/qulle/activity-timeline/tree/main/examples/v${VERSION}" target="_blank" class="at-link">
+                            v${VERSION}
+                        </a>
+                    </p>
+                    <h3>🐞 Fetch error</h3>
+                    <p>Data from the GitHub repo could not be fetched</p>
+                `;
+                notificationModal.setModalContent(content);
                 console.error('Fetch error:', error);
             });
     }
@@ -693,7 +706,7 @@ class Timeline {
         }
 
         // Had problems with this.canvas.scrollIntoView({behaviour: 'smooth', block: 'center', inline: 'end'})
-        // It worked fine in Firefox but didn't work in Chrome, so i went for a manual approach
+        // It worked fine in Firefox but didn't fully work in Chrome, so i went for a manual approach
 
         // Always center vertically as the Timeline's X-axis is most interesting
         const verticalMidWindow = window.innerHeight / 2;
@@ -835,7 +848,7 @@ class Timeline {
                 });
 
                 // If there was a 5th column with JSON data
-                // Remove that empty propertie from the data
+                // Remove that empty property from the data
                 parse.data.forEach(row => {
                     delete row['json'];
                 });

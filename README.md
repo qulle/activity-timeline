@@ -86,7 +86,9 @@ The data is given in CSV format using `;` (semicolon) as delimiter. It is import
 | 2022-07-08 18:36  | Restarted application pool | Some additional information about the activity | #FAD7AC    | #C27B25      |
 | 2022-07-10 12:05  | New release application A  | Some additional information about the activity | #B1DDF0    | #10739E      |
 
-**Note:** Excel encodes the CSV-file in `ISO-8859-1` when Swedish characters are used, therefore the file is always opened using the same encoding.
+**Note:** Excel encodes the CSV-file using `ISO-8859-1` (on Windows) if the file contains non-ASCII characters. Therefore the file is always opened using that encoding.
+
+**Tip:** Use some HTML tags to highlight important information in the `Description` field.
 
 ## Theme
 The theme can be controlled through parameters in in both the JSON and CSV format. Colors cab be provided in the formats `Hex`, `RGB(A)` and `Names`.
@@ -127,7 +129,7 @@ The meta data is provided in a meta-node. If properties are left out or no meta-
 ```json
 {
     "meta": {
-        "version": "1.2.0",
+        "version": "1.3.0",
         "locale": "sv-se"
     },
     "style": {},
@@ -137,7 +139,7 @@ The meta data is provided in a meta-node. If properties are left out or no meta-
 
 ### CSV
 There is no optimal way of provide additional data in a CSV-file in addition to the data itself. The meta data is provided in a JSON-formated string as a `last` header.
-| Timestamp         | Title                      | Description                                    | Fill Color | Stroke Color | {"meta":{"version":"1.2.0","locale":"en-us"}} |
+| Timestamp         | Title                      | Description                                    | Fill Color | Stroke Color | {"meta":{"version":"1.3.0","locale":"en-us"}} |
 |-------------------|----------------------------|------------------------------------------------|------------|--------------|-----------------------------------------------|
 | 2022-07-08 12:23  | Patched webserver          | Some additional information about the activity | #D0CEE2    | #56517E      |                                               |
 | 2022-07-08 18:36  | Restarted application pool | Some additional information about the activity | #FAD7AC    | #C27B25      |                                               |
@@ -145,12 +147,12 @@ There is no optimal way of provide additional data in a CSV-file in addition to 
 
 Meta JSON-string.
 ```json
-{"meta":{"version":"1.2.0","locale":"en-us"}}
+{"meta":{"version":"1.3.0","locale":"en-us"}}
 ```
 
 To have both `style` and `meta` data in the CSV file, use this JSON-string.
 ```json
-{"meta":{"version":"1.2.0","locale":"en-us"},"style":{"textColor":"#D3D9E6","timelineStrokeColor":"#D3D9E6","strokeColor":"#353C4B","backgroundColor":"#3B4352"}}
+{"meta":{"version":"1.3.0","locale":"en-us"},"style":{"textColor":"#D3D9E6","timelineStrokeColor":"#D3D9E6","strokeColor":"#353C4B","backgroundColor":"#3B4352"}}
 ```
 
 ## Get started
