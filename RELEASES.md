@@ -1,7 +1,7 @@
 # Releases
 
 ## 1.3.0
-2022-08-17
+2022-08-14
 
 Some of the changes done in this version is:
 
