@@ -48,8 +48,8 @@ class Timeline {
     private fileData: FileData;
 
     // Intermittent event listeners
-    private canvasMouseMoveCallback: any;
-    private canvasMouseUpCallback: any;
+    private canvasMouseMoveCallback: EventListener;
+    private canvasMouseUpCallback: EventListener;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -408,9 +408,11 @@ class Timeline {
         const percent    = (this.days.length / timePeriod) * 100;
 
         const content = `
+            <h3>📝 File meta</h3>
             <p>File: <strong>${this.fileData.name}.${this.fileData.extension}</strong></p>
             <p>Opened: <strong>${this.fileData.opened.toLocaleTimeString(this.meta.locale)}</strong></p>
             <p>Localization: <strong>${this.meta.locale}</strong></p>
+            <h3>📉 Statistics</h3>
             <p>First date: <strong>${startDate.toLocaleDateString(this.meta.locale)}</strong></p>
             <p>Last date: <strong>${endDate.toLocaleDateString(this.meta.locale)}</strong></p>
             <p>Time period: <strong>${timePeriod} days</strong></p>
@@ -1202,8 +1204,11 @@ class Timeline {
         const ctx = <CanvasRenderingContext2D>this.canvas.getContext('2d');
 
         // Set canvas width and height based no the data and the devicePixelRatio
-        this.canvas.width  = this.calculateWidth(DEVICE_PIXEL_RATIO);
-        this.canvas.height = this.calculateHeight(DEVICE_PIXEL_RATIO);
+        const resolutionWidth  = this.calculateWidth(DEVICE_PIXEL_RATIO);
+        const resolutionHeight = this.calculateHeight(DEVICE_PIXEL_RATIO);
+
+        this.canvas.width  = resolutionWidth;
+        this.canvas.height = resolutionHeight;
 
         // Clear the canvas
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -1217,8 +1222,8 @@ class Timeline {
         ctx.scale(this.zoom.value * DEVICE_PIXEL_RATIO, this.zoom.value * DEVICE_PIXEL_RATIO);
 
         // Set the canvas element width and height to shrink the canvas on devices that have ratio > 1
-        this.canvas.style.width  = this.calculateWidth(1)  + 'px';
-        this.canvas.style.height = this.calculateHeight(1) + 'px';
+        this.canvas.style.width  = Number(resolutionWidth  / DEVICE_PIXEL_RATIO) + 'px';
+        this.canvas.style.height = Number(resolutionHeight / DEVICE_PIXEL_RATIO) + 'px';
 
         // Get the mid of the canvas, must come after the calculate width/height
         const mid = this.getVerticalMid();
