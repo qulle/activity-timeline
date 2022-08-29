@@ -3,7 +3,7 @@
 ## 1.3.0
 2022-08-14
 
-Some of the changes done in this version is:
+Some of the changes done in this version are:
 
 - Added notifications menu button, recieves messages from the developer fetched from the GitHub repo
 - Fixed encoding problem when opening a CSV-file containing non-ASCII characters that was edited in Excel using ISO-8859-1 aka Windows-1252 aka CP1252
@@ -16,7 +16,7 @@ Some of the changes done in this version is:
 ## 1.2.0
 2022-08-07
 
-Some of the changes done in this version is:
+Some of the changes done in this version are:
 
 - Removed contextmenu and replaced with menu in top right corner
 - Added support for mobile devices 
@@ -33,7 +33,7 @@ Some of the changes done in this version is:
 ## 1.1.0
 2022-08-03
 
-Some of the changes done in this version is:
+Some of the changes done in this version are:
 
 - Added CSV parsing to enable managing the data-file from Excel
 - Improved feedback to user via Alert messages

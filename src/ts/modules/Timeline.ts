@@ -566,9 +566,9 @@ class Timeline {
      */
     private exportAsCSV(): void {
         const data: Data = {
-            meta:  {...this.meta},
-            style: {...this.style},
-            days:  [...this.days]
+            meta:  { ...this.meta  },
+            style: { ...this.style },
+            days:  [ ...this.days  ]
         };
 
         const lineBreak = '\r\n'; 
@@ -600,12 +600,12 @@ class Timeline {
      */
     private exportAsJSON(): void {
         const data: Data = {
-            meta:  {...this.meta},
-            style: {...this.style},
-            days:  [...this.days]
+            meta:  { ...this.meta  },
+            style: { ...this.style },
+            days:  [ ...this.days  ]
         };
 
-        const indentation = '    ';
+        const indentationSpaces = 4;
         const json = JSON.stringify(data, (key, value) => {
             // Remove the coordinates from the output, only used internally
             if(key === 'x' || key === 'y') {
@@ -624,7 +624,7 @@ class Timeline {
             }
 
             return value;
-        }, indentation);
+        }, indentationSpaces);
 
         download(this.fileData.name + '.json', json);
     }
