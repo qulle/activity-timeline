@@ -765,10 +765,9 @@ class Timeline {
      * @param file The file that was dropped
      */
     private parseJSONFile(file: File): void {
-        const self = this;
         const reader = new FileReader();
         reader.readAsText(file);
-        reader.onloadend = function() {
+        reader.addEventListener('loadend', () => {
             let currentDate: string;
 
             try {
@@ -795,9 +794,9 @@ class Timeline {
                     days:  [ ...DefaultData.days,  ...(parse['days']  || []) ]
                 };
 
-                self.setData(data);
-                self.render();
-                self.scrollTimeline(ScrollPosition.End);
+                this.setData(data);
+                this.render();
+                this.scrollTimeline(ScrollPosition.End);
             }catch(error: any) {
                 console.error(error);
                 const parseAlert = new Alert(`
@@ -805,7 +804,7 @@ class Timeline {
                     <p>Error parsing the <strong>JSON</strong> file - check the syntax</p>
                 `);
             }
-        }
+        });
     }
 
     /**
@@ -813,10 +812,9 @@ class Timeline {
      * @param file The file that was dropped
      */
     private parseCSVFile(file: File): void {
-        const self = this;
         const reader = new FileReader();
         reader.readAsText(file, 'iso-8859-1');
-        reader.onloadend = function() {
+        reader.addEventListener('loadend', () => {
             try {
                 let meta  = {};
                 let style = {};
@@ -888,9 +886,9 @@ class Timeline {
                     days:  [ ...DefaultData.days,  ...(days  || []) ]
                 };
 
-                self.setData(data);
-                self.render();
-                self.scrollTimeline(ScrollPosition.End);
+                this.setData(data);
+                this.render();
+                this.scrollTimeline(ScrollPosition.End);
             }catch(error: any) {
                 console.error(error);
                 const parseAlert = new Alert(`
@@ -898,7 +896,7 @@ class Timeline {
                     <p>Error parsing the <strong>CSV</strong> file - check the syntax</p>
                 `);
             }
-        }
+        });
     }
 
     /**
