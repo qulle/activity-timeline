@@ -464,9 +464,7 @@ class Timeline {
             const fileDialog = <HTMLInputElement>event.target;
             const firstFile = fileDialog.files![0];
             this.handleFileBeforeParse(firstFile);
-            document.body.removeChild(fileDialog);
         });
-        document.body.appendChild(fileDialog);
 
         // Open the dialog
         fileDialog.click();
