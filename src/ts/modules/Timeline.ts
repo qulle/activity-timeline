@@ -30,7 +30,7 @@ const SCROLLABLE_TARGET = document.documentElement;
 const DEVICE_PIXEL_RATIO = window.devicePixelRatio || 1;
 
 // URL to the raw GitHub JSON object containing information from the developer
-const NOTIFICATION_URL = 'https://raw.githubusercontent.com/qulle/activity-timeline/main/endpoints/notifications.json';
+const NOTIFICATION_URL = 'https://raw.githubusercontent.com/qulle/notification-endpoints/main/endpoints/activity-timeline.json';
 
 /**
  * Class to render Timeline on a HTMLCanvasElement
@@ -386,7 +386,7 @@ class Timeline {
         let minActivities = Number.MAX_VALUE;
         let totActivities = 0;
 
-        this.days.forEach(day => {
+        this.days.forEach((day) => {
             const dayLenght = day.activities.length;
 
             if(dayLenght > maxActivities) {
@@ -498,9 +498,10 @@ class Timeline {
 
     menuOnFetchNotification(): void {
         const notificationModal = new Modal('Notifications', '<p>Loading notifications...</p>');
+        const timestamp = new Date().getTime().toString();
 
-        fetch(NOTIFICATION_URL)
-            .then(async response => {
+        fetch(NOTIFICATION_URL + '?cache=' + timestamp)
+            .then(async (response) => {
                 const data = await response.json();
 
                 if(!response.ok) {
@@ -547,11 +548,12 @@ class Timeline {
                             v${VERSION}
                         </a>
                     </p>
-                    <h3>🐞 Fetch error</h3>
+                    <h3>📡 Fetch error</h3>
                     <p>Data from the GitHub repo could not be fetched</p>
                 `;
+
                 notificationModal.setModalContent(content);
-                console.error('Fetch error:', error);
+                console.error(`Fetch error [${error}]`);
             });
     }
 
@@ -581,8 +583,8 @@ class Timeline {
         
         let csv = `Timestamp;Title;Description;Fill Color;Stroke Color;${json}${lineBreak}`;
 
-        data.days.forEach(day => {
-            day.activities.forEach(activity => {
+        data.days.forEach((day) => {
+            day.activities.forEach((activity) => {
                 csv += `${activity.timestamp.toLocaleString(data.meta.locale)};${activity.title};${activity.description};${activity.fillColor};${activity.strokeColor}${lineBreak}`;
             });
         });
@@ -796,7 +798,7 @@ class Timeline {
                 this.render();
                 this.scrollTimeline(ScrollPosition.End);
             }catch(error: any) {
-                console.error(error);
+                console.error(`JSON parsing error [${error}]`);
                 const parseAlert = new Alert(`
                     <h3 class="at-m-0">Oops!</h3>
                     <p>Error parsing the <strong>JSON</strong> file - check the syntax</p>
@@ -847,7 +849,7 @@ class Timeline {
 
                 // If there was a 5th column with JSON data
                 // Remove that empty property from the data
-                parse.data.forEach(row => {
+                parse.data.forEach((row) => {
                     delete row['json'];
                 });
                 
@@ -888,7 +890,7 @@ class Timeline {
                 this.render();
                 this.scrollTimeline(ScrollPosition.End);
             }catch(error: any) {
-                console.error(error);
+                console.error(`CSV parsing error [${error}]`);
                 const parseAlert = new Alert(`
                     <h3 class="at-m-0">Oops!</h3>
                     <p>Error parsing the <strong>CSV</strong> file - check the syntax</p>
@@ -938,7 +940,7 @@ class Timeline {
         let maxActivitiesOnYAxis = 0;
 
         // Find the day with most activites to be rendered on the Y-axis
-        this.days.forEach(day => {
+        this.days.forEach((day) => {
             if(day.activities.length > maxActivitiesOnYAxis) {
                 maxActivitiesOnYAxis = day.activities.length;
             } 
@@ -1066,7 +1068,7 @@ class Timeline {
         });
 
         // Sort activities in each day in ascending order
-        this.days.forEach(day => {
+        this.days.forEach((day) => {
             day.activities.sort((left, right) => {
                 return left.timestamp.getTime() - right.timestamp.getTime();
             });
