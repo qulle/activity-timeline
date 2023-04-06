@@ -1,18 +1,15 @@
 const download = function(filename: string, content: any) {
-    const element = document.createElement('a');
-    if(isImage(filename)) {
-        element.setAttribute('href', content);
-    }else {
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
-    }
-    
-    element.style.display = 'none';
-    element.setAttribute('download', filename);
-    
-    document.body.appendChild(element);
-    element.click();
-    
-    document.body.removeChild(element);
+    const downloadTrigger = document.createElement('a');
+
+    downloadTrigger.style.display = 'none';
+    downloadTrigger.setAttribute('download', filename);
+
+    const data = isImage(filename)
+        ? content
+        : `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`;
+
+    downloadTrigger.setAttribute('href', data);
+    downloadTrigger.click();
 }
 
 const isImage = function(filename: string) {

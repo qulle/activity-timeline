@@ -3,7 +3,10 @@ import ModalBase from './ModalBase';
 class Modal extends ModalBase {
     private modalContent: HTMLDivElement;
 
-    constructor(title: string, content: string) {
+    constructor(
+        title: string, 
+        content: string
+    ) {
         super(title);
     
         const modalContent = document.createElement('div');
@@ -14,9 +17,9 @@ class Modal extends ModalBase {
         this.show(modalContent);
     }
 
-    setModalContent(content: string): void {
+    setContent(content: string): void {
         this.modalContent.innerHTML = content;
     }
 };
 
-export default Modal;
+export { Modal };

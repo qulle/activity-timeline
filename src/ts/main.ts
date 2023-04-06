@@ -1,4 +1,4 @@
-import Timeline from './modules/Timeline';
+import { Timeline } from './modules/Timeline';
 
 /**
  * Initiate Timeline instance

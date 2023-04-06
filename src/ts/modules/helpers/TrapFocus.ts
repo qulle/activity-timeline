@@ -1,34 +1,29 @@
-const FOCUSABLE_ELEMENTS = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-
 /**
  * Traps the focus to always stay in the target component
  * @param event KeyboardEvent
  */
-const trapFocusKeyListener = function(event: KeyboardEvent) {
-    // Component = the modal, alert, confirm etc.
-    const component = this;
-
-    const firstFocusableElement = component.querySelectorAll(FOCUSABLE_ELEMENTS)[0];
-    const focusableContent = component.querySelectorAll(FOCUSABLE_ELEMENTS);
-    const lastFocusableElement = focusableContent[focusableContent.length - 1];
-    
-    const isTabPressed = event.key.toLowerCase() === 'tab';
-
-    if(!isTabPressed) {
+const trapFocus = function(event: KeyboardEvent) {
+    const isTabKey = event.key === 'Tab';
+    if(!Boolean(isTabKey)) {
         return;
     }
 
-    if(event.shiftKey) {
-        if(document.activeElement === firstFocusableElement) {
-            lastFocusableElement.focus();
+    const elements = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const firstElement = this.querySelectorAll(elements)[0];
+    const content = this.querySelectorAll(elements);
+    const lastElement = content[content.length - 1];
+
+    if(Boolean(event.shiftKey)) {
+        if(document.activeElement === firstElement) {
+            lastElement.focus();
             event.preventDefault();
         }
     }else {
-        if(document.activeElement === lastFocusableElement) {
-            firstFocusableElement.focus();
+        if(document.activeElement === lastElement) {
+            firstElement.focus();
             event.preventDefault();
         }
     }
 }
 
-export { trapFocusKeyListener };
+export { trapFocus };

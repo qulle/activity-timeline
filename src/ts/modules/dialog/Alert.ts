@@ -1,16 +1,17 @@
 import DialogBase from './DialogBase';
 
 class Alert extends DialogBase {
-    constructor(content: string) {
+    constructor(
+        content: string
+    ) {
         super();
 
         const dialog = document.createElement('div');
         dialog.className = 'at-dialog at-dialog--alert at-animations--bounce';
-
         dialog.innerHTML = content;
 
-        const alertButtons = document.createElement('div');
-        alertButtons.className = 'at-dialog__button-wrapper';
+        const buttonWrapper = document.createElement('div');
+        buttonWrapper.className = 'at-dialog__button-wrapper';
 
         const okButton = document.createElement('button');
         okButton.setAttribute('type', 'button');
@@ -20,8 +21,8 @@ class Alert extends DialogBase {
             this.close();
         });
 
-        alertButtons.appendChild(okButton);
-        dialog.appendChild(alertButtons);
+        buttonWrapper.appendChild(okButton);
+        dialog.appendChild(buttonWrapper);
 
         this.dialogBackdrop.appendChild(dialog);
         document.body.appendChild(this.dialogBackdrop);
@@ -29,4 +30,4 @@ class Alert extends DialogBase {
     }
 };
 
-export default Alert;
+export { Alert };

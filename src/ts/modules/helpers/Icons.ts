@@ -4,7 +4,7 @@ import { Icon } from "../../models/icon.model";
 const getIcon = function(icon: Icon) {
     const options = { ...DefaultIcon, ...icon };
 
-    return `
+    return (`
         <svg xmlns="http://www.w3.org/2000/svg"
             width="${options.width}"
             height="${options.height}"
@@ -14,7 +14,7 @@ const getIcon = function(icon: Icon) {
             viewBox="0 0 16 16">
             ${options.path}
         </svg>
-    `;
+    `);
 }
 
 const SVGPaths = {

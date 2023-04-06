@@ -1,11 +1,13 @@
-import Timeline from '../Timeline';
+import { Timeline } from '../Timeline';
 import { getIcon, SVGPaths } from '../helpers/Icons';
 
 class Menu {
     private timeline: Timeline;
     private menu: HTMLDivElement;
 
-    constructor(timeline: Timeline) {
+    constructor(
+        timeline: Timeline
+    ) {
         this.timeline = timeline;
         this.create();
     }
@@ -131,4 +133,4 @@ class Menu {
     }
 };
 
-export default Menu;
+export { Menu };

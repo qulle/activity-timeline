@@ -1,23 +1,33 @@
 {
     "name": "activity-timeline",
-    "version": "1.4.0-beta",
+    "version": "1.4.0",
+    "author": "Qulle",
+    "license": "BSD-2-Clause license",
     "description": "Portable activity timeline that draws the timeline based on data given in JSON or CSV format.",
+    "keywords": [
+        "timeline",
+        "canvas"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/qulle/activity-timeline.git"
+    },
+    "homepage": "https://github.com/qulle/activity-timeline#readme",
+    "bugs": {
+        "url": "https://github.com/qulle/activity-timeline/issues"
+    },
     "scripts": {
         "start": "parcel src/index.html --open",
         "build": "parcel build --public-url . src/index.html",
-        "clean": "rm -rf dist/ .parcel-cache/",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "clean": "rm -rf dist/ .parcel-cache/"
     },
-    "keywords": [],
-    "author": "Qulle - https://github.com/qulle",
-    "license": "BSD-2-Clause license",
     "devDependencies": {
-        "@parcel/transformer-sass": "^2.6.2",
-        "@types/node": "^18.6.3",
-        "@types/papaparse": "^5.3.3",
-        "parcel": "^2.6.2"
+        "@parcel/transformer-sass": "^2.8.3",
+        "@types/node": "^18.15.11",
+        "@types/papaparse": "^5.3.7",
+        "parcel": "^2.8.3"
     },
     "dependencies": {
-        "papaparse": "^5.3.2"
+        "papaparse": "^5.4.1"
     }
 }

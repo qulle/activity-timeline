@@ -2,7 +2,7 @@
 Portable Activity Timeline that draws the Timeline based on data given in `JSON` or `CSV` format. By clicking on any activity a detailed modal window is displayed. Initially developed for post incident investigations to get a overview of the situation in an it-environment.
 
 ## Latest build - [Demo](https://qulle.github.io/activity-timeline/)
-All version can be found in the `examples` directory. Read about new features in the [RELEASES](RELEASES.md) log.
+All version can be found in the `examples` directory. Read about new features in the [Change log](https://github.com/qulle/activity-timeline/tree/main/changelog).
 
 ## Screenshots
 The application is not limited to a light and dark theme. Any colors can be used to create custom themes.

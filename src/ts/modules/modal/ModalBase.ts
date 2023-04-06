@@ -1,4 +1,4 @@
-import { trapFocusKeyListener } from '../helpers/TrapFocus';
+import { trapFocus } from '../helpers/TrapFocus';
 import { getIcon, SVGPaths } from '../helpers/Icons';
 
 const ANIMATION_CLASS = 'at-animations--bounce';
@@ -7,11 +7,13 @@ class ModalBase {
     private modalBackdrop: HTMLDivElement;
     private modal: HTMLDivElement;
 
-    constructor(title: string) {
+    constructor(
+        title: string
+    ) {
         const modalBackdrop = document.createElement('div');
         modalBackdrop.className = 'at-modal-backdrop at-modal-backdrop--fixed';
         modalBackdrop.setAttribute('tabindex', '-1');
-        modalBackdrop.addEventListener('keydown', trapFocusKeyListener);
+        modalBackdrop.addEventListener('keydown', trapFocus);
         modalBackdrop.addEventListener('click', this.bounceAnimation.bind(this));
 
         const modal = document.createElement('div');
@@ -52,18 +54,22 @@ class ModalBase {
         });
     }
 
+    private isSelf(event: MouseEvent): boolean {
+        return event.target !== this.modalBackdrop;
+    }
+
+    private runAnimation(): void {
+        this.modal.classList.remove(ANIMATION_CLASS);
+        void this.modal.offsetWidth;
+        this.modal.classList.add(ANIMATION_CLASS);
+    }
+
     private bounceAnimation(event: MouseEvent): void {
-        // To prevent trigger the animation if clicked in the modal and not the backdrop
-        if(event.target !== this.modalBackdrop) {
+        if(this.isSelf(event)) {
             return;
         }
 
-        this.modal.classList.remove(ANIMATION_CLASS);
-
-        // Trigger reflow of DOM, reruns animation when class is added back
-        void this.modal.offsetWidth;
-
-        this.modal.classList.add(ANIMATION_CLASS);
+        this.runAnimation();
     }
 
     show(modalContent: HTMLDivElement): void {
@@ -73,7 +79,7 @@ class ModalBase {
     }
 
     close(): void {
-        this.modalBackdrop.removeEventListener('keydown', trapFocusKeyListener);
+        this.modalBackdrop.removeEventListener('keydown', trapFocus);
         this.modalBackdrop.remove();
     }
 };

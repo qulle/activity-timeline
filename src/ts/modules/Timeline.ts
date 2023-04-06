@@ -1,21 +1,21 @@
 import { Day } from '../models/day.model';
+import { Menu } from './menu/menu';
 import { Data } from '../models/data.model';
 import { Zoom } from '../models/zoom.model';
 import { Meta } from '../models/meta.model';
+import { Modal } from './modal/Modal';
+import { Alert } from './dialog/Alert';
 import { Style } from '../models/style.model';
+import { download } from './helpers/Download';
 import { Position } from '../models/position.model';
 import { Activity } from '../models/activity.model';
 import { FileData } from '../models/filedata.model';
 import { Coordinate } from '../models/coordinate.model';
 import { DefaultData } from '../defaults/data.default';
 import { DefaultZoom } from '../defaults/zoom.default';
+import { ScrollPosition } from '../types/scroll-position.type';
 import { DefaultPosition } from '../defaults/position.default';
 import { DefaultConstants } from '../defaults/constants.default';
-import { ScrollPosition } from '../types/scroll-position.type';
-import { download } from './helpers/Download';
-import Modal from './modal/Modal';
-import Alert from './dialog/Alert';
-import Menu from './menu/menu';
 
 // Third party CSV parser
 import Papa from 'papaparse';
@@ -51,7 +51,9 @@ class Timeline {
     private canvasMouseMoveCallback: EventListener;
     private canvasMouseUpCallback: EventListener;
 
-    constructor(canvas: HTMLCanvasElement) {
+    constructor(
+        canvas: HTMLCanvasElement
+    ) {
         this.canvas = canvas;
         this.isDragging = false;
         this.zoom = DefaultZoom;
@@ -119,10 +121,10 @@ class Timeline {
      */
     private onKeyDown(event: KeyboardEvent): void {
         const key = event.key.toLowerCase();
-        if((event.ctrlKey || event.metaKey) && (
-            key === '+' ||
-            key === '-'
-        )) {
+        if(
+            (event.ctrlKey || event.metaKey) && 
+            (key === '+'   || key === '-')
+        ) {
             event.preventDefault();
             event.stopPropagation();
         }
@@ -323,7 +325,7 @@ class Timeline {
     /**
      * Callback function from Menu - Resets to Landing Page
      */
-    menuOnLandingPage(): void {
+    private menuOnLandingPage(): void {
         this.days  = DefaultData.days;
         this.style = DefaultData.style;
         this.meta  = DefaultData.meta;
@@ -334,28 +336,28 @@ class Timeline {
     /**
      * Callback function from Menu - Pans to the start (left) of the Timeline
      */
-    menuOnAlignStart(): void {
+    private menuOnAlignStart(): void {
         this.scrollTimeline(ScrollPosition.Start);
     }
 
     /**
      * Callback function from Menu - Pans to the end (right) of the Timeline
      */
-    menuOnAlignEnd(): void {
+    private menuOnAlignEnd(): void {
         this.scrollTimeline(ScrollPosition.End);
     }
 
     /**
      * Callback function from Menu - Pans to the center of the Timeline
      */
-    menuOnAlignCenter(): void {
+    private menuOnAlignCenter(): void {
         this.scrollTimeline(ScrollPosition.Center);
     }
 
     /**
      * Callback function from Menu - Exports Timeline as PNG
      */
-    menuOnExportPNG(): void {
+    private menuOnExportPNG(): void {
         if(!this.hasData()) {
             return;
         }
@@ -367,7 +369,7 @@ class Timeline {
     /**
      * Callback function from Menu - Displays GitHub information
      */
-    menuOnGitHub(): void {
+    private menuOnGitHub(): void {
         const aboutAlert = new Alert(`
             <h3 class="at-m-0">GitHub</h3>
             <p>Developed by Qulle <a href="https://github.com/qulle/activity-timeline" target="_blank" class="at-link">github.com/qulle/activity-timeline</a></p>
@@ -377,7 +379,7 @@ class Timeline {
     /**
      * Callback function from Menu - Displays Info about the current Timeline
      */
-    menuOnInfo(): void {
+    private menuOnInfo(): void {
         if(!this.hasData()) {
             return;
         }
@@ -429,7 +431,7 @@ class Timeline {
     /**
      * Callback function from Menu - Resets Zoom to default value
      */
-    menuOnZoomReset(): void {
+    private menuOnZoomReset(): void {
         if(!this.hasData()) {
             return;
         }
@@ -441,7 +443,7 @@ class Timeline {
      * Callback function from Menu - Zooms in or out based on delta value
      * @param deltaY Positive value = Zoom in, Negative value = Zoom out
      */
-    menuOnZoomDelta(deltaY: number): void {
+    private menuOnZoomDelta(deltaY: number): void {
         if(!this.hasData()) {
             return;
         }
@@ -455,7 +457,7 @@ class Timeline {
     /**
      * Callback function from Menu - Import file to render
      */
-    menuOnDataImport(): void {
+    private menuOnDataImport(): void {
         const fileDialog = document.createElement('input');
         fileDialog.className = 'at-d-none';
         fileDialog.setAttribute('type', 'file');
@@ -473,7 +475,7 @@ class Timeline {
     /**
      * Callback function from Menu - Export data to JSON or CSV file
      */
-    menuOnDataExport(): void {
+    private menuOnDataExport(): void {
         if(!this.hasData()) {
             return;
         }
@@ -496,65 +498,97 @@ class Timeline {
         }
     }
 
-    menuOnFetchNotification(): void {
+    private menuOnFetchNotification(): void {
         const notificationModal = new Modal('Notifications', '<p>Loading notifications...</p>');
         const timestamp = new Date().getTime().toString();
 
-        fetch(NOTIFICATION_URL + '?cache=' + timestamp)
-            .then(async (response) => {
-                const data = await response.json();
+        fetch(`${NOTIFICATION_URL}?cache=${timestamp}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            },
+        })
+        .then((response) => {
+            if(!Boolean(response.ok)) {
+                return Promise.reject(`${response.status} ${response.statusText}`);
+            }
 
-                if(!response.ok) {
-                    return Promise.reject((data && data.message) || response.status);
-                }
+            return response.json();
+        })
+        .then((data: any) => {
+            let features = '';
+            if(data.features.length === 0) {
+                features = '<p>No features currently under development</p>';
+            }else {
+                data.features.forEach((feature: any) => {
+                    features += `<p>${feature}</p>`;
+                });
+            }
 
-                let features = '';
-                if(data.features.length === 0) {
-                    features = '<p>No features currently under development</p>';
-                }else {
-                    data.features.forEach((feature: string) => {
-                        features += `<p>${feature}</p>`;
-                    });
-                }
+            const notification = {
+                message: data.message,
+                latest: {
+                    version: data.latest.version,
+                    released: data.latest.released
+                },
+                features: features
+            };
 
-                const content = `
-                    <h3>👋 From Qulle</h3>
-                    <p>${data.qulle}</p>
-                    <h3>🔭 Your version</h3>
-                    <p>
-                        <a href="https://github.com/qulle/activity-timeline/tree/main/examples/v${VERSION}" target="_blank" class="at-link">
-                            v${VERSION}
-                        </a>
-                    </p>
+            this.setNotificationModalContent(notificationModal, notification);
+        })
+        .catch(error => {
+            const notification = {
+                message: 'Glad you are using my App, hope you find it useful!',
+                error: 'Data from the GitHub repo could not be fetched'
+            };
+
+            this.setNotificationModalContent(notificationModal, notification);
+            console.error(`Fetch error [${error}]`);
+        });
+    }
+
+    private setNotificationModalContent(modal: Modal, notification: any): void {
+        const content = `
+            <h3>👋 From Qulle</h3>
+            <p>${notification.message}</p>
+            <h3>🔭 Your version</h3>
+            <p>
+                <a href="https://github.com/qulle/activity-timeline/tree/main/examples/v${VERSION}" target="_blank" class="at-link">
+                    v${VERSION}
+                </a>
+            </p>
+            ${
+                Boolean(notification.latest) && 
+                Boolean(notification.latest.version) && 
+                Boolean(notification.latest.released)
+                ? `
                     <h3>🚀 Latest version</h3>
                     <p>
-                        <a href="https://github.com/qulle/activity-timeline/tree/main/examples/v${data.latest}" target="_blank" class="at-link">
-                            v${data.latest} - ${new Date(data.released).toLocaleDateString(this.meta.locale)}
+                        <a href="https://github.com/qulle/activity-timeline/tree/main/examples/v${notification.latest.version}" target="_blank" class="at-link">
+                            v${notification.latest.version} - ${new Date(notification.latest.released).toLocaleDateString(this.meta.locale)}
                         </a>
                     </p>
+                ` : ''
+            }
+            ${
+                Boolean(notification.features) && 
+                notification.features.length > 0
+                ? `
                     <h3>💡 New features under development</h3>
-                    ${features}
-                `;
-
-                notificationModal.setModalContent(content);
-            })
-            .catch(error => {
-                const content = `
-                    <h3>👋 From Qulle</h3>
-                    <p>Glad you are using my App, hope you find it useful!</p>
-                    <h3>🔭 Your version</h3>
-                    <p>
-                        <a href="https://github.com/qulle/activity-timeline/tree/main/examples/v${VERSION}" target="_blank" class="at-link">
-                            v${VERSION}
-                        </a>
-                    </p>
+                    ${notification.features}
+                ` : ''
+            }
+            ${
+                Boolean(notification.error) && 
+                notification.error.length > 0
+                ? `
                     <h3>📡 Fetch error</h3>
-                    <p>Data from the GitHub repo could not be fetched</p>
-                `;
+                    <p>${notification.error}</p>
+                ` : ''
+            }
+        `;
 
-                notificationModal.setModalContent(content);
-                console.error(`Fetch error [${error}]`);
-            });
+        modal.setContent(content);
     }
 
     // --------------------------------------------------------------
@@ -966,7 +1000,11 @@ class Timeline {
      * @returns Y-coordinate for where to render the X-axis
      */
     private getVerticalMid(): number {
-        return (this.canvas.height / 2 - this.style.lineThickness / 2) / (this.zoom.value * DEVICE_PIXEL_RATIO);
+        return (
+            this.canvas.height / 2 - this.style.lineThickness / 2
+        ) / (
+            this.zoom.value * DEVICE_PIXEL_RATIO
+        );
     }
 
     /**
@@ -976,10 +1014,11 @@ class Timeline {
      */
     private isToday(date: Date): boolean {
         const now = new Date();
-
-        return date.getFullYear() === now.getFullYear() &&
-               date.getMonth()    === now.getMonth()    && 
-               date.getDate()     === now.getDate();
+        return (
+            date.getFullYear() === now.getFullYear() &&
+            date.getMonth()    === now.getMonth()    && 
+            date.getDate()     === now.getDate()
+        );
     }
 
     /**
@@ -989,7 +1028,9 @@ class Timeline {
      */
     private getWeekDayName(date: Date): string {
         // Translate date to weekday name
-        const weekDay = date.toLocaleString(this.meta.locale, { weekday: 'long' });
+        const weekDay = date.toLocaleString(this.meta.locale, { 
+            weekday: 'long'
+        });
         
         // Make the first letter capialized
         return weekDay.charAt(0).toUpperCase() + weekDay.slice(1);
@@ -1055,7 +1096,7 @@ class Timeline {
      * Sorts both days and activites in ascending order
      * @param data Meta, Style and Array of days to be rendered
      */
-    setData(data: Data): void {
+    private setData(data: Data): void {
         // Note: The data has been merged with the default data and handled in specific ways in the JSON/CSV-parse methods
         // The data should be 100% valid when it arrives here
         this.meta  = data.meta;
@@ -1114,7 +1155,7 @@ class Timeline {
     /**
      * Renders the landing page when the app is first started
      */
-    renderLandingPage(): void {
+    private renderLandingPage(): void {
         // Reset zoom, the user might have zoomed the Timeline and then navigated to the Landing Page
         this.resetZoom();
 
@@ -1197,7 +1238,7 @@ class Timeline {
     /**
      * Renders the Timeline on the canvas based on the given data
      */
-    render(): void {
+    private render(): void {
         // Context to render elements on
         const ctx = <CanvasRenderingContext2D>this.canvas.getContext('2d');
 
@@ -1267,10 +1308,7 @@ class Timeline {
                 // Render activity-circle
                 const posX = x;
                 const posY = y + DefaultConstants.stepDistanceYAxis * (index + 1) * -sign;
-                this.renderCircle(
-                    ctx, 
-                    posX, 
-                    posY, 
+                this.renderCircle(ctx, posX, posY, 
                     DefaultConstants.radius, 
                     activity.fillColor, 
                     activity.strokeColor 
@@ -1295,10 +1333,7 @@ class Timeline {
             });
 
             // Render date-circle on Timeline
-            this.renderCircle(
-                ctx, 
-                x, 
-                y, 
+            this.renderCircle(ctx, x, y, 
                 DefaultConstants.radius, 
                 this.style.fillColor, 
                 this.style.strokeColor
@@ -1318,4 +1353,4 @@ class Timeline {
     }
 };
 
-export default Timeline;
+export { Timeline };
